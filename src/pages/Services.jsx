@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Shield, Heart, Sparkles, Brain, Calendar, CheckCircle } from "lucide-react";
 import SectionHeading from "../components/shared/SectionHeading";
+import SEOHead from "@/components/SEOHead";
+import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const services = [
   {
@@ -52,6 +54,7 @@ const services = [
 export default function Services() {
   return (
     <div className="pt-24 md:pt-28">
+      <SEOHead {...seoPages.services} canonical={getCanonicalUrl(seoPages.services.path)} />
       <section className="px-5 md:px-8 pb-8">
         <div className="max-w-6xl mx-auto">
           <SectionHeading

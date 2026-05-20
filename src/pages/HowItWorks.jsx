@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Calendar, MessageCircle, Target, TrendingUp, Phone, HelpCircle } from "lucide-react";
 import SectionHeading from "../components/shared/SectionHeading";
+import SEOHead from "@/components/SEOHead";
+import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const steps = [
   {
@@ -54,6 +56,7 @@ const faqs = [
 export default function HowItWorks() {
   return (
     <div className="pt-24 md:pt-28">
+      <SEOHead {...seoPages.howItWorks} canonical={getCanonicalUrl(seoPages.howItWorks.path)} />
       <section className="px-5 md:px-8 pb-20 md:pb-28">
         <div className="max-w-6xl mx-auto">
           <SectionHeading

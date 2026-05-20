@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import SectionHeading from "../components/shared/SectionHeading";
 import { blogPosts } from "@/data/blogPosts";
 import { apiFetch } from "@/api/client";
+import SEOHead from "@/components/SEOHead";
+import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const BLOG_IMG = "/images/blog-cover.png";
 
@@ -29,6 +31,7 @@ export default function Blog() {
 
   return (
     <div className="pt-24 md:pt-28">
+      <SEOHead {...seoPages.blog} canonical={getCanonicalUrl(seoPages.blog.path)} />
       <section className="px-5 md:px-8 pb-20 md:pb-28">
         <div className="max-w-6xl mx-auto">
           <SectionHeading
@@ -39,7 +42,7 @@ export default function Blog() {
 
           {publishedPosts.length === 0 ? (
             <div className="text-center py-20">
-              <img src={BLOG_IMG} alt="Blog" className="w-full max-w-md mx-auto rounded-2xl mb-8 opacity-80" />
+              <img src={BLOG_IMG} alt="Illustrazione del blog di psicologia e benessere" className="w-full max-w-md mx-auto rounded-2xl mb-8 opacity-80" />
               <h3 className="font-heading text-xl font-semibold text-foreground mb-2">I prossimi articoli arriveranno presto</h3>
               <p className="text-muted-foreground">Sto preparando contenuti utili per il tuo benessere. Torna a trovarmi!</p>
             </div>

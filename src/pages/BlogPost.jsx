@@ -9,6 +9,8 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { blogPosts } from "@/data/blogPosts";
 import { apiFetch } from "@/api/client";
+import SEOHead from "@/components/SEOHead";
+import { blogSeoDescriptions, getCanonicalUrl, seoPages } from "@/config/seo";
 
 const BLOG_IMG = "/images/blog-cover.png";
 
@@ -35,6 +37,7 @@ export default function BlogPostPage() {
   if (isLoading && !post) {
     return (
       <div className="pt-24 md:pt-28 px-5 md:px-8 max-w-3xl mx-auto pb-20 text-center text-muted-foreground">
+        <SEOHead title="Caricamento articolo" description={seoPages.blog.description} canonical={getCanonicalUrl(`/blog/${slug}`)} noIndex />
         Caricamento articolo...
       </div>
     );
@@ -43,6 +46,7 @@ export default function BlogPostPage() {
   if (!post) {
     return (
       <div className="pt-24 md:pt-28 px-5 md:px-8 max-w-3xl mx-auto pb-20 text-center">
+        <SEOHead title="Articolo non trovato" description={seoPages.notFound.description} canonical={getCanonicalUrl(`/blog/${slug || ""}`)} noIndex />
         <h1 className="font-heading text-2xl font-semibold text-foreground mb-4">Articolo non trovato</h1>
         <Link to="/blog">
           <Button variant="outline" className="rounded-full gap-2">
@@ -53,8 +57,12 @@ export default function BlogPostPage() {
     );
   }
 
+  const postPath = `/blog/${post.slug || post.id}`;
+  const description = blogSeoDescriptions[post.slug] || post.excerpt || seoPages.blog.description;
+
   return (
     <div className="pt-24 md:pt-28">
+      <SEOHead title={post.title} description={description} canonical={getCanonicalUrl(postPath)} />
       <article className="px-5 md:px-8 pb-20 md:pb-28">
         <div className="max-w-3xl mx-auto">
           <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">

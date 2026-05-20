@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Cookie, X } from "lucide-react";
@@ -41,9 +42,9 @@ export default function ConsentNotice() {
                 <p className="text-sm text-foreground font-medium mb-1">Questo sito utilizza i cookie</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Utilizziamo cookie tecnici e, con il tuo consenso, cookie di analisi per migliorare la tua esperienza. Puoi leggere la nostra{" "}
-                  <a href="/privacy" className="underline hover:text-primary">
+                  <Link to="/privacy" className="underline hover:text-primary">
                     Privacy Policy
-                  </a>{" "}
+                  </Link>{" "}
                   per maggiori dettagli.
                 </p>
                 <div className="flex gap-3 mt-4">

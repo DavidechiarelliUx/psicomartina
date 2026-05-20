@@ -3,7 +3,6 @@ import { Toaster as SonnerToaster } from "sonner";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "@/lib/query-client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import PageNotFound from "./lib/PageNotFound";
 
 import MainLayout from "./components/layout/MainLayout";
 import Home from "./pages/Home";
@@ -15,6 +14,7 @@ import BlogPostPage from "./pages/BlogPost";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Dashboard from "./pages/Dashboard";
+import NotFound from "./pages/NotFound";
 
 const AuthenticatedApp = () => {
   return (
@@ -29,7 +29,7 @@ const AuthenticatedApp = () => {
         <Route path="/contatti" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="*" element={<PageNotFound />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

@@ -7,6 +7,8 @@ import DashboardNotifications from "../components/dashboards/DashboardNotificati
 import DashboardCalendar from "../components/dashboards/DashboardCalendar";
 import { BookOpen, CalendarPlus, HeartHandshake, Home, LayoutDashboard, ListChecks, UserRound } from "lucide-react";
 import { apiFetch } from "@/api/client";
+import SEOHead from "@/components/SEOHead";
+import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const siteLinks = [
   { label: "Home", path: "/", icon: Home },
@@ -28,6 +30,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background pt-20 lg:flex lg:pt-0">
+      <SEOHead {...seoPages.dashboard} canonical={getCanonicalUrl(seoPages.dashboard.path)} />
       <aside className="hidden bg-card border-border px-6 py-4 lg:sticky lg:top-0 lg:block lg:h-screen lg:w-64 lg:border-r">
         <div className="flex items-center gap-3 lg:mb-8">
           <LayoutDashboard className="w-5 h-5 text-primary" />

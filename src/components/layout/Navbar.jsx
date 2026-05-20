@@ -10,7 +10,6 @@ const navLinks = [
   { label: "Servizi", path: "/servizi" },
   { label: "Come Funziona", path: "/come-funziona" },
   { label: "Blog", path: "/blog" },
-  { label: "Contatti", path: "/contatti" },
 ];
 
 export default function Navbar() {

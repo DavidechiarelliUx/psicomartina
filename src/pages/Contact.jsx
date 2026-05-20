@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +11,8 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import SectionHeading from "../components/shared/SectionHeading";
 import { apiFetch } from "@/api/client";
+import SEOHead from "@/components/SEOHead";
+import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const timeSlots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
 
@@ -52,6 +55,7 @@ export default function Contact() {
 
   return (
     <div className="pt-24 md:pt-28">
+      <SEOHead {...seoPages.contact} canonical={getCanonicalUrl(seoPages.contact.path)} />
       <section className="px-5 md:px-8 pb-20 md:pb-28">
         <div className="max-w-6xl mx-auto">
           <SectionHeading
@@ -209,9 +213,9 @@ export default function Contact() {
                     <Checkbox id="privacy" checked={form.privacy_accepted} onCheckedChange={(v) => update("privacy_accepted", v)} />
                     <Label htmlFor="privacy" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
                       Ho letto e accetto la{" "}
-                      <a href="/privacy" className="underline hover:text-primary">
+                      <Link to="/privacy" className="underline hover:text-primary">
                         Privacy Policy
-                      </a>
+                      </Link>
                       . Acconsento al trattamento dei miei dati personali ai sensi del GDPR (Reg. UE 2016/679) per la gestione della richiesta di appuntamento.
                     </Label>
                   </div>

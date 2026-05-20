@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Calendar, GraduationCap, Heart, Shield, Lightbulb } from "lucide-react";
+import SEOHead from "@/components/SEOHead";
+import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const ABOUT_IMG = "/images/hero-portrait.png";
 const OFFICE_IMG = "/images/studio.png";
@@ -37,6 +39,7 @@ const values = [
 export default function About() {
   return (
     <div className="pt-24 md:pt-28">
+      <SEOHead {...seoPages.about} canonical={getCanonicalUrl(seoPages.about.path)} />
       {/* Intro */}
       <section className="px-5 md:px-8 pb-20 md:pb-28">
         <div className="max-w-6xl mx-auto">
@@ -118,7 +121,7 @@ export default function About() {
               </ul>
             </div>
             <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}>
-              <img src={OFFICE_IMG} alt="Studio della Dott.ssa Sereni" className="rounded-2xl shadow-xl w-full object-cover aspect-video" />
+              <img src={OFFICE_IMG} alt="Studio della Dott.ssa Martina Giovinazzo" className="rounded-2xl shadow-xl w-full object-cover aspect-video" />
             </motion.div>
           </div>
         </div>

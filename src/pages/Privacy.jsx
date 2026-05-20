@@ -1,8 +1,11 @@
 import React from "react";
+import SEOHead from "@/components/SEOHead";
+import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 export default function Privacy() {
   return (
     <div className="pt-24 md:pt-28 pb-20 md:pb-28 px-5 md:px-8">
+      <SEOHead {...seoPages.privacy} canonical={getCanonicalUrl(seoPages.privacy.path)} />
       <div className="max-w-3xl mx-auto">
         <h1 className="font-heading text-hero-sm md:text-display font-semibold text-foreground mb-8">Privacy Policy</h1>
 
