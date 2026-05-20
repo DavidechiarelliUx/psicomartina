@@ -20,13 +20,20 @@ const siteLinks = [
 ];
 
 export default function Dashboard() {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
-    queryFn: () => apiFetch("/api/dashboard"),
+    queryFn: async () => {
+      try {
+        return await apiFetch("/api/dashboard");
+      } catch {
+        return { appointments: [], contacts: [], unavailable: true };
+      }
+    },
   });
 
   const appointments = data?.appointments || [];
   const contacts = data?.contacts || [];
+  const isApiUnavailable = data?.unavailable;
 
   return (
     <div className="min-h-screen bg-background pt-20 lg:flex lg:pt-0">
@@ -72,12 +79,13 @@ export default function Dashboard() {
       <div className="flex-1 max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">
         {isLoading ? (
           <div className="bg-card border border-border rounded-2xl p-8 text-sm text-muted-foreground">Caricamento dati dal database...</div>
-        ) : isError ? (
-          <div className="bg-destructive/10 border border-destructive/30 rounded-2xl p-8 text-sm text-destructive">
-            Errore nel caricamento dashboard: {error.message}
-          </div>
         ) : (
           <>
+            {isApiUnavailable && (
+              <div className="bg-card border border-border rounded-2xl p-5 text-sm text-muted-foreground">
+                Dashboard caricata in modalità anteprima. I dati reali saranno disponibili quando il backend e il database saranno configurati in produzione.
+              </div>
+            )}
             <section id="statistiche">
               <DashboardStats appointments={appointments} contacts={contacts} />
             </section>
