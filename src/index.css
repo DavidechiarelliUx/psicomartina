@@ -1,0 +1,106 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-heading: "Playfair Display", serif;
+    --font-body: "Inter", sans-serif;
+
+    --background: 30 33% 96%;
+    --foreground: 164 17% 21%;
+    --card: 30 33% 98%;
+    --card-foreground: 164 17% 21%;
+    --popover: 30 33% 98%;
+    --popover-foreground: 164 17% 21%;
+    --primary: 180 22% 45%;
+    --primary-foreground: 30 33% 98%;
+    --secondary: 18 52% 77%;
+    --secondary-foreground: 164 17% 21%;
+    --muted: 30 20% 92%;
+    --muted-foreground: 168 8% 40%;
+    --accent: 16 38% 59%;
+    --accent-foreground: 30 33% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 20% 88%;
+    --input: 30 20% 88%;
+    --ring: 180 22% 45%;
+    --chart-1: 180 22% 45%;
+    --chart-2: 18 52% 77%;
+    --chart-3: 16 38% 59%;
+    --chart-4: 164 17% 21%;
+    --chart-5: 30 33% 96%;
+    --radius: 0.75rem;
+    --sidebar-background: 30 33% 96%;
+    --sidebar-foreground: 164 17% 21%;
+    --sidebar-primary: 180 22% 45%;
+    --sidebar-primary-foreground: 30 33% 98%;
+    --sidebar-accent: 30 20% 92%;
+    --sidebar-accent-foreground: 164 17% 21%;
+    --sidebar-border: 30 20% 88%;
+    --sidebar-ring: 180 22% 45%;
+  }
+
+  .dark {
+    --background: 164 17% 10%;
+    --foreground: 30 20% 92%;
+    --card: 164 17% 13%;
+    --card-foreground: 30 20% 92%;
+    --popover: 164 17% 13%;
+    --popover-foreground: 30 20% 92%;
+    --primary: 180 22% 55%;
+    --primary-foreground: 164 17% 10%;
+    --secondary: 18 30% 30%;
+    --secondary-foreground: 30 20% 92%;
+    --muted: 164 12% 18%;
+    --muted-foreground: 30 15% 65%;
+    --accent: 16 38% 50%;
+    --accent-foreground: 30 33% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 164 12% 20%;
+    --input: 164 12% 20%;
+    --ring: 180 22% 55%;
+    --chart-1: 180 22% 55%;
+    --chart-2: 18 40% 50%;
+    --chart-3: 16 38% 50%;
+    --chart-4: 30 20% 80%;
+    --chart-5: 164 17% 15%;
+    --sidebar-background: 164 17% 10%;
+    --sidebar-foreground: 30 20% 92%;
+    --sidebar-primary: 180 22% 55%;
+    --sidebar-primary-foreground: 164 17% 10%;
+    --sidebar-accent: 164 12% 18%;
+    --sidebar-accent-foreground: 30 20% 92%;
+    --sidebar-border: 164 12% 20%;
+    --sidebar-ring: 180 22% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.widget_notifiche {
+  overflow: auto;
+}

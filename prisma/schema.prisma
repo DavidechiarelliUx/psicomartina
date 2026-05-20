@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
+enum ContactStatus {
+  new
+  read
+  replied
+  archived
+}
+
+enum ServiceType {
+  primo_colloquio
+  ansia
+  relazioni
+  autostima
+  traumi
+}
+
+model Client {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName     String            @map("full_name")
+  email        String            @unique
+  phone        String?
+  notes        String?
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt    DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  appointments Appointment[]
+  messages     ContactMessage[]
+
+  @@index([email])
+  @@index([deletedAt])
+  @@map("clients")
+}
+
+model Service {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code          ServiceType   @unique
+  title         String
+  subtitle      String?
+  description   String
+  displayOrder  Int           @default(0) @map("display_order")
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  appointments  Appointment[]
+  messages      ContactMessage[]
+  blogPosts     BlogPost[]
+  benefits      ServiceBenefit[]
+
+  @@index([active, displayOrder])
+  @@index([deletedAt])
+  @@map("services")
+}
+
+model ServiceBenefit {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  serviceId    String   @map("service_id") @db.Uuid
+  benefit      String
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  service      Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, displayOrder])
+  @@map("service_benefits")
+}
+
+model Appointment {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientId        String            @map("client_id") @db.Uuid
+  serviceId       String?           @map("service_id") @db.Uuid
+  serviceType     ServiceType       @default(primo_colloquio) @map("service_type")
+  scheduledDate   DateTime          @map("scheduled_date") @db.Date
+  timeSlot        String            @map("time_slot")
+  status          AppointmentStatus @default(pending)
+  notes           String?
+  privacyAccepted Boolean           @default(false) @map("privacy_accepted")
+  source          String            @default("website")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  client          Client            @relation(fields: [clientId], references: [id])
+  service         Service?          @relation(fields: [serviceId], references: [id])
+
+  @@index([scheduledDate, timeSlot])
+  @@index([status, scheduledDate])
+  @@index([serviceType])
+  @@index([clientId])
+  @@index([deletedAt])
+  @@map("appointments")
+}
+
+model ContactMessage {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientId        String?       @map("client_id") @db.Uuid
+  serviceId       String?       @map("service_id") @db.Uuid
+  name            String
+  email           String
+  phone           String?
+  message         String
+  status          ContactStatus @default(new)
+  privacyAccepted Boolean       @default(false) @map("privacy_accepted")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  client          Client?       @relation(fields: [clientId], references: [id])
+  service         Service?      @relation(fields: [serviceId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([email])
+  @@index([deletedAt])
+  @@map("contact_messages")
+}
+
+model Testimonial {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  text        String
+  rating      Int       @default(5)
+  avatarUrl   String?   @map("avatar_url")
+  visible     Boolean   @default(true)
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([visible, displayOrder])
+  @@index([deletedAt])
+  @@map("testimonials")
+}
+
+model BlogPost {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  serviceId   String?     @map("service_id") @db.Uuid
+  title       String
+  slug        String      @unique
+  excerpt     String
+  content     String
+  category    ServiceType?
+  coverImage  String?     @map("cover_image")
+  published   Boolean     @default(true)
+  readingTime Int?        @map("reading_time")
+  publishedAt DateTime?   @map("published_at") @db.Timestamptz(6)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime?   @map("deleted_at") @db.Timestamptz(6)
+  service     Service?    @relation(fields: [serviceId], references: [id])
+
+  @@index([published, publishedAt])
+  @@index([category])
+  @@index([deletedAt])
+  @@map("blog_posts")
+}

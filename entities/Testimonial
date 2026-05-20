@@ -1,0 +1,30 @@
+{
+  "name": "Testimonial",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome (o iniziali) del cliente"
+    },
+    "text": {
+      "type": "string",
+      "description": "Testo della testimonianza"
+    },
+    "rating": {
+      "type": "number",
+      "description": "Valutazione da 1 a 5"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "URL avatar"
+    },
+    "visible": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "text"
+  ]
+}

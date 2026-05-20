@@ -1,0 +1,52 @@
+{
+  "name": "BlogPost",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titolo dell'articolo"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-friendly slug"
+    },
+    "excerpt": {
+      "type": "string",
+      "description": "Breve estratto dell'articolo"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenuto completo dell'articolo in markdown"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "ansia",
+        "relazioni",
+        "autostima",
+        "traumi",
+        "crescita_personale",
+        "benessere"
+      ],
+      "description": "Categoria dell'articolo"
+    },
+    "cover_image": {
+      "type": "string",
+      "description": "URL immagine di copertina"
+    },
+    "published": {
+      "type": "boolean",
+      "default": true
+    },
+    "reading_time": {
+      "type": "number",
+      "description": "Tempo di lettura in minuti"
+    }
+  },
+  "required": [
+    "title",
+    "slug",
+    "excerpt",
+    "content"
+  ]
+}

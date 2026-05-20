@@ -1,0 +1,56 @@
+{
+  "name": "Appointment",
+  "type": "object",
+  "properties": {
+    "client_name": {
+      "type": "string"
+    },
+    "client_email": {
+      "type": "string"
+    },
+    "client_phone": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "time_slot": {
+      "type": "string",
+      "description": "Orario selezionato"
+    },
+    "service_type": {
+      "type": "string",
+      "enum": [
+        "ansia",
+        "relazioni",
+        "autostima",
+        "traumi",
+        "primo_colloquio"
+      ],
+      "description": "Tipo di servizio richiesto"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "privacy_accepted": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "client_name",
+    "client_email",
+    "date",
+    "time_slot"
+  ]
+}

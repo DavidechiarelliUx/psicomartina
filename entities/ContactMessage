@@ -1,0 +1,40 @@
+{
+  "name": "ContactMessage",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome del contatto"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email del contatto"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefono del contatto"
+    },
+    "message": {
+      "type": "string",
+      "description": "Messaggio"
+    },
+    "privacy_accepted": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "read",
+        "replied"
+      ],
+      "default": "new"
+    }
+  },
+  "required": [
+    "name",
+    "email",
+    "message"
+  ]
+}
