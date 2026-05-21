@@ -38,11 +38,11 @@ export default function Footer() {
             <h4 className="font-heading text-lg font-semibold text-background mb-4">Contatti</h4>
             <div className="space-y-3">
               <a
-                href="mailto:martinagiovinazzo@gmail.com"
+                href="mailto:chiarellidavide99@gmail.com"
                 className="flex items-center gap-3 text-sm text-background/60 hover:text-secondary transition-colors"
               >
                 <Mail className="w-4 h-4 flex-shrink-0" />
-                martinagiovinazzo@gmail.com
+                chiarellidavide99@gmail.com
               </a>
               <a href="tel:+393331234567" className="flex items-center gap-3 text-sm text-background/60 hover:text-secondary transition-colors">
                 <Phone className="w-4 h-4 flex-shrink-0" />

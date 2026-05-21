@@ -14,7 +14,7 @@ export default function Privacy() {
           <p>
             Dott.ssa Martina Giovinazzo — Via della Serenità 42, 00100 Roma (RM)
             <br />
-            Email: martinagiovinazzo@gmail.com — Tel: +39 333 123 4567
+            Email: chiarellidavide99@gmail.com — Tel: +39 333 123 4567
             <br />
             P.IVA: 12345678901
           </p>
@@ -66,7 +66,7 @@ export default function Privacy() {
           <h2>Contatti</h2>
           <p>
             Per esercitare i tuoi diritti o per qualsiasi domanda relativa al trattamento dei tuoi dati, puoi scrivere a:{" "}
-            <a href="mailto:martinagiovinazzo@gmail.com">martinagiovinazzo@gmail.com</a>
+            <a href="mailto:chiarellidavide99@gmail.com">chiarellidavide99@gmail.com</a>
           </p>
 
           <p className="text-sm mt-8">Ultimo aggiornamento: Maggio 2026</p>

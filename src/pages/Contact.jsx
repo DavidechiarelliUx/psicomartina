@@ -71,13 +71,13 @@ export default function Contact() {
                 <h3 className="font-heading text-lg font-semibold text-foreground mb-6">Informazioni</h3>
                 <div className="space-y-5">
                   <a
-                    href="mailto:martinagiovinazzo@gmail.com"
+                    href="mailto:chiarellidavide99@gmail.com"
                     className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-foreground">Email</p>
-                      <p>martinagiovinazzo@gmail.com</p>
+                      <p>chiarellidavide99@gmail.com</p>
                     </div>
                   </a>
                   <a href="tel:+393331234567" className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
@@ -225,7 +225,13 @@ export default function Contact() {
                     size="lg"
                     className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-8 gap-2 w-full sm:w-auto"
                   >
-                    {sending ? "Invio in corso..." : <><Send className="w-4 h-4" /> Invia Richiesta</>}
+                    {sending ? (
+                      "Invio in corso..."
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" /> Invia Richiesta
+                      </>
+                    )}
                   </Button>
                 </form>
               )}
