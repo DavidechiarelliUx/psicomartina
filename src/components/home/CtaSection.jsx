@@ -5,6 +5,8 @@ import { Calendar, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function CtaSection() {
+  const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
+
   return (
     <section className="py-20 md:py-28 px-5 md:px-8 bg-primary/5">
       <motion.div
@@ -29,7 +31,7 @@ export default function CtaSection() {
               Prenota il Primo Colloquio
             </Button>
           </Link>
-          <a href="tel:+393331234567">
+          <a href={`tel:${studioPhone}`}>
             <Button size="lg" variant="outline" className="rounded-full px-8 text-base gap-2 w-full sm:w-auto">
               <Phone className="w-4 h-4" />
               Chiamami

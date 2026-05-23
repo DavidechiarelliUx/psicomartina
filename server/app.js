@@ -30,6 +30,41 @@ const serviceLabels = {
   traumi: "Traumi",
 };
 
+const appointmentStatusToDb = {
+  in_attesa: "pending",
+  confermata: "confirmed",
+  conclusa: "completed",
+  annullata: "cancelled",
+  pending: "pending",
+  confirmed: "confirmed",
+  completed: "completed",
+  cancelled: "cancelled",
+};
+
+const appointmentStatusToClient = {
+  pending: "in_attesa",
+  confirmed: "confermata",
+  completed: "conclusa",
+  cancelled: "annullata",
+};
+
+const blogCategoryToDb = {
+  ansia: "ansia",
+  relazioni: "relazioni",
+  autostima: "autostima",
+  traumi: "traumi",
+};
+
+function slugify(value = "") {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
@@ -76,6 +111,7 @@ function mapAppointment(appointment) {
     date: formatDate(appointment.scheduledDate),
     time_slot: appointment.timeSlot,
     status: appointment.status,
+    stato: appointmentStatusToClient[appointment.status] || appointment.status,
     notes: appointment.notes,
   };
 }
@@ -110,6 +146,38 @@ function mapPost(post) {
   };
 }
 
+function mapCmsService(service) {
+  return {
+    id: service.id,
+    code: service.code,
+    title: service.title,
+    name: service.title,
+    subtitle: service.subtitle,
+    short_description: service.subtitle || "",
+    description: service.description,
+    long_description: service.description,
+    icon: service.iconLabel || "",
+    price: service.priceLabel || "",
+    display_order: service.displayOrder,
+    active: service.active,
+    created_at: service.createdAt?.toISOString(),
+    updated_at: service.updatedAt?.toISOString(),
+  };
+}
+
+function mapCmsTestimonial(testimonial) {
+  return {
+    id: testimonial.id,
+    name: testimonial.name,
+    text: testimonial.text,
+    rating: testimonial.rating,
+    visible: testimonial.visible,
+    date: formatDate(testimonial.createdAt),
+    display_order: testimonial.displayOrder,
+    created_at: testimonial.createdAt.toISOString(),
+  };
+}
+
 async function getDashboard() {
   const [appointments, contacts] = await Promise.all([
     prisma.appointment.findMany({
@@ -139,6 +207,21 @@ async function createAppointment(payload) {
   if (!fullName || !email || !payload.date || !payload.time_slot || !payload.privacy_accepted) {
     const error = new Error("Compila nome, email, data, orario e consenso privacy.");
     error.statusCode = 400;
+    throw error;
+  }
+
+  const confirmedConflict = await prisma.appointment.findFirst({
+    where: {
+      deletedAt: null,
+      status: "confirmed",
+      scheduledDate: new Date(`${payload.date}T00:00:00.000Z`),
+      timeSlot: payload.time_slot,
+    },
+  });
+
+  if (confirmedConflict) {
+    const error = new Error("Questa fascia oraria è già confermata. Scegli un altro orario.");
+    error.statusCode = 409;
     throw error;
   }
 
@@ -186,6 +269,30 @@ async function createAppointment(payload) {
   }
 
   return mapAppointment(appointment);
+}
+
+async function getPublicAvailability(monthValue) {
+  const month = /^\d{4}-\d{2}$/.test(monthValue || "") ? monthValue : new Date().toISOString().slice(0, 7);
+  const [year, monthIndex] = month.split("-").map(Number);
+  const start = new Date(Date.UTC(year, monthIndex - 1, 1));
+  const end = new Date(Date.UTC(year, monthIndex, 1));
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      deletedAt: null,
+      status: "confirmed",
+      scheduledDate: { gte: start, lt: end },
+    },
+    select: { scheduledDate: true, timeSlot: true },
+    orderBy: [{ scheduledDate: "asc" }, { timeSlot: "asc" }],
+  });
+
+  const booked = appointments.reduce((acc, appointment) => {
+    const date = formatDate(appointment.scheduledDate);
+    acc[date] = [...(acc[date] || []), appointment.timeSlot];
+    return acc;
+  }, {});
+
+  return { month, booked };
 }
 
 async function sendBookingEmails({ payload, appointment }) {
@@ -269,6 +376,196 @@ async function getBookingStats(period) {
   });
 }
 
+async function autoCompletePastAppointments() {
+  const now = new Date();
+  const today = formatDate(now);
+  const currentTime = now.toTimeString().slice(0, 5);
+
+  const result = await prisma.appointment.updateMany({
+    where: {
+      status: "confirmed",
+      deletedAt: null,
+      OR: [
+        { scheduledDate: { lt: new Date(`${today}T00:00:00.000Z`) } },
+        { scheduledDate: new Date(`${today}T00:00:00.000Z`), timeSlot: { lt: currentTime } },
+      ],
+    },
+    data: { status: "completed" },
+  });
+
+  return result.count;
+}
+
+async function getCmsList(type, { publicOnly = false } = {}) {
+  if (type === "blog") {
+    const posts = await prisma.blogPost.findMany({
+      where: { deletedAt: null, ...(publicOnly ? { published: true } : {}) },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    });
+    return posts.map(mapPost);
+  }
+
+  if (type === "servizi") {
+    const services = await prisma.service.findMany({
+      where: { deletedAt: null, ...(publicOnly ? { active: true } : {}) },
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
+    });
+    return services.map(mapCmsService);
+  }
+
+  if (type === "recensioni") {
+    const testimonials = await prisma.testimonial.findMany({
+      where: { deletedAt: null, ...(publicOnly ? { visible: true } : {}) },
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
+    });
+    return testimonials.map(mapCmsTestimonial);
+  }
+
+  const error = new Error("Tipo CMS non valido.");
+  error.statusCode = 404;
+  throw error;
+}
+
+async function createCmsItem(type, payload) {
+  if (type === "blog") {
+    const title = String(payload.title || "").trim();
+    if (!title) {
+      const error = new Error("Il titolo è obbligatorio.");
+      error.statusCode = 400;
+      throw error;
+    }
+    const slug = slugify(payload.slug || title);
+    const publishedAt = payload.published_at || payload.date || new Date().toISOString().slice(0, 10);
+    return mapPost(
+      await prisma.blogPost.create({
+        data: {
+          title,
+          slug,
+          excerpt: payload.excerpt || String(payload.content || "").slice(0, 150) || title,
+          content: payload.content || "",
+          category: blogCategoryToDb[payload.category] || null,
+          coverImage: payload.cover_image || null,
+          published: Boolean(payload.published),
+          readingTime: Math.max(1, Math.ceil(String(payload.content || "").split(/\s+/).filter(Boolean).length / 180)),
+          publishedAt: payload.published ? new Date(`${publishedAt}T09:00:00.000Z`) : null,
+        },
+      })
+    );
+  }
+
+  if (type === "servizi") {
+    const title = String(payload.title || payload.name || "").trim();
+    if (!title) {
+      const error = new Error("Il nome servizio è obbligatorio.");
+      error.statusCode = 400;
+      throw error;
+    }
+    return mapCmsService(
+      await prisma.service.create({
+        data: {
+          code: slugify(payload.code || title),
+          title,
+          subtitle: payload.short_description || payload.subtitle || null,
+          description: payload.description || payload.long_description || "",
+          iconLabel: payload.icon || null,
+          priceLabel: payload.price || null,
+          displayOrder: Number(payload.display_order || 0),
+          active: payload.active !== false,
+        },
+      })
+    );
+  }
+
+  if (type === "recensioni") {
+    if (!payload.name || !payload.text) {
+      const error = new Error("Nome e testo recensione sono obbligatori.");
+      error.statusCode = 400;
+      throw error;
+    }
+    return mapCmsTestimonial(
+      await prisma.testimonial.create({
+        data: {
+          name: payload.name,
+          text: payload.text,
+          rating: Number(payload.rating || 5),
+          visible: payload.visible !== false,
+          createdAt: payload.date ? new Date(`${payload.date}T12:00:00.000Z`) : undefined,
+        },
+      })
+    );
+  }
+
+  const error = new Error("Tipo CMS non valido.");
+  error.statusCode = 404;
+  throw error;
+}
+
+async function updateCmsItem(type, id, payload) {
+  if (type === "blog") {
+    return mapPost(
+      await prisma.blogPost.update({
+        where: { id },
+        data: {
+          title: payload.title,
+          slug: payload.slug ? slugify(payload.slug) : undefined,
+          excerpt: payload.excerpt,
+          content: payload.content,
+          category: payload.category ? blogCategoryToDb[payload.category] || null : undefined,
+          coverImage: payload.cover_image,
+          published: typeof payload.published === "boolean" ? payload.published : undefined,
+          publishedAt: payload.published ? new Date(`${payload.published_at || payload.date || new Date().toISOString().slice(0, 10)}T09:00:00.000Z`) : null,
+        },
+      })
+    );
+  }
+
+  if (type === "servizi") {
+    return mapCmsService(
+      await prisma.service.update({
+        where: { id },
+        data: {
+          title: payload.title || payload.name,
+          subtitle: payload.short_description || payload.subtitle,
+          description: payload.description || payload.long_description,
+          iconLabel: payload.icon,
+          priceLabel: payload.price,
+          displayOrder: payload.display_order === undefined ? undefined : Number(payload.display_order),
+          active: typeof payload.active === "boolean" ? payload.active : undefined,
+        },
+      })
+    );
+  }
+
+  if (type === "recensioni") {
+    return mapCmsTestimonial(
+      await prisma.testimonial.update({
+        where: { id },
+        data: {
+          name: payload.name,
+          text: payload.text,
+          rating: payload.rating === undefined ? undefined : Number(payload.rating),
+          visible: typeof payload.visible === "boolean" ? payload.visible : undefined,
+          createdAt: payload.date ? new Date(`${payload.date}T12:00:00.000Z`) : undefined,
+        },
+      })
+    );
+  }
+
+  const error = new Error("Tipo CMS non valido.");
+  error.statusCode = 404;
+  throw error;
+}
+
+async function deleteCmsItem(type, id) {
+  const data = { deletedAt: new Date() };
+  if (type === "blog") return prisma.blogPost.update({ where: { id }, data });
+  if (type === "servizi") return prisma.service.update({ where: { id }, data });
+  if (type === "recensioni") return prisma.testimonial.update({ where: { id }, data });
+  const error = new Error("Tipo CMS non valido.");
+  error.statusCode = 404;
+  throw error;
+}
+
 export async function handleApiRequest(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
@@ -280,6 +577,10 @@ export async function handleApiRequest(req, res) {
     if (req.method === "GET" && url.pathname === "/api/health") {
       await prisma.$queryRaw`select 1`;
       return sendJson(res, 200, { ok: true });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/availability") {
+      return sendJson(res, 200, await getPublicAvailability(url.searchParams.get("month")));
     }
 
     if (req.method === "POST" && url.pathname === "/api/auth/login") {
@@ -301,29 +602,58 @@ export async function handleApiRequest(req, res) {
       return sendJson(res, 200, { period, data: await getBookingStats(period) });
     }
 
-    if (req.method === "GET" && url.pathname === "/api/services") {
-      const services = await prisma.service.findMany({
-        where: { active: true, deletedAt: null },
-        include: { benefits: { orderBy: { displayOrder: "asc" } } },
-        orderBy: { displayOrder: "asc" },
+    if (req.method === "POST" && url.pathname === "/api/bookings/auto-concludi") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      return sendJson(res, 200, { updated: await autoCompletePastAppointments() });
+    }
+
+    const statusMatch = url.pathname.match(/^\/api\/bookings\/([^/]+)\/stato$/);
+    if (req.method === "PATCH" && statusMatch) {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      const { stato } = await readJson(req);
+      const status = appointmentStatusToDb[stato];
+      if (!status) return sendJson(res, 400, { error: "Stato prenotazione non valido." });
+      const updated = await prisma.appointment.update({
+        where: { id: statusMatch[1] },
+        data: { status },
+        include: { client: true, service: true },
       });
-      return sendJson(res, 200, services);
+      return sendJson(res, 200, mapAppointment(updated));
+    }
+
+    const cmsListMatch = url.pathname.match(/^\/api\/cms\/(blog|servizi|recensioni)$/);
+    if (cmsListMatch && req.method === "GET") {
+      const wantsAll = url.searchParams.get("all") === "1";
+      if (wantsAll && !requireDashboardAuth(req, res, sendJson)) return;
+      const publicOnly = !wantsAll;
+      return sendJson(res, 200, await getCmsList(cmsListMatch[1], { publicOnly }));
+    }
+    if (cmsListMatch && req.method === "POST") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      return sendJson(res, 201, await createCmsItem(cmsListMatch[1], await readJson(req)));
+    }
+
+    const cmsItemMatch = url.pathname.match(/^\/api\/cms\/(blog|servizi|recensioni)\/([^/]+)$/);
+    if (cmsItemMatch && req.method === "PUT") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      return sendJson(res, 200, await updateCmsItem(cmsItemMatch[1], cmsItemMatch[2], await readJson(req)));
+    }
+    if (cmsItemMatch && req.method === "DELETE") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      await deleteCmsItem(cmsItemMatch[1], cmsItemMatch[2]);
+      return sendJson(res, 200, { ok: true });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/services") {
+      return sendJson(res, 200, await getCmsList("servizi", { publicOnly: true }));
     }
 
     if (req.method === "GET" && url.pathname === "/api/testimonials") {
-      const testimonials = await prisma.testimonial.findMany({
-        where: { visible: true, deletedAt: null },
-        orderBy: { displayOrder: "asc" },
-      });
-      return sendJson(res, 200, testimonials);
+      return sendJson(res, 200, await getCmsList("recensioni", { publicOnly: true }));
     }
 
     if (req.method === "GET" && url.pathname === "/api/blog-posts") {
-      const posts = await prisma.blogPost.findMany({
-        where: { published: true, deletedAt: null },
-        orderBy: { publishedAt: "desc" },
-      });
-      return sendJson(res, 200, posts.map(mapPost));
+      return sendJson(res, 200, await getCmsList("blog", { publicOnly: true }));
     }
 
     if (req.method === "GET" && url.pathname.startsWith("/api/blog-posts/")) {

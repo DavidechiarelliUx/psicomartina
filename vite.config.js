@@ -13,7 +13,7 @@ function isHtmlNavigation(req) {
 
 function isKnownAppPath(url = "/") {
   const pathname = url.split("?")[0].replace(/\/$/, "") || "/";
-  return knownRoutes.has(pathname) || /^\/blog\/[^/]+$/.test(pathname);
+  return knownRoutes.has(pathname) || /^\/blog\/[^/]+$/.test(pathname) || /^\/dashboard\/cms\/(blog|servizi|recensioni)$/.test(pathname);
 }
 
 function shouldServe404(req) {

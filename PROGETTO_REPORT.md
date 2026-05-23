@@ -42,6 +42,38 @@
 - Grafico "Andamento Prenotazioni" con selettore `Giorno`, `Settimana`, `Mese`.
 - Endpoint protetto `GET /api/bookings/stats?period=day|week|month` per aggregare le prenotazioni.
 
+### CMS dashboard
+
+- Aggiunta sezione CMS protetta con route:
+  - `/dashboard/cms/blog`
+  - `/dashboard/cms/servizi`
+  - `/dashboard/cms/recensioni`
+- Sidebar dashboard aggiornata con menu espandibile `Aggiungi` e link attivi alle tre sezioni.
+- Pagina unica riutilizzabile `src/pages/dashboard/CmsPage.jsx` con toggle `Aggiungi`, `Aggiorna`, `Elimina`.
+- Endpoint CMS:
+  - `GET/POST /api/cms/blog`, `PUT/DELETE /api/cms/blog/:id`
+  - `GET/POST /api/cms/servizi`, `PUT/DELETE /api/cms/servizi/:id`
+  - `GET/POST /api/cms/recensioni`, `PUT/DELETE /api/cms/recensioni/:id`
+- Le `GET` pubbliche leggono solo contenuti pubblicati/attivi/visibili; le scritture richiedono token JWT.
+- Pagine pubbliche `Blog`, `Servizi` e recensioni Home collegate agli endpoint CMS.
+
+### Prenotazioni
+
+- Stato prenotazione mostrato in italiano nella dashboard:
+  - `in_attesa` -> `pending`
+  - `confermata` -> `confirmed`
+  - `conclusa` -> `completed`
+  - `annullata` -> `cancelled`
+- Cambio stato manuale da calendario dashboard tramite `PATCH /api/bookings/:id/stato`.
+- Endpoint protetto `POST /api/bookings/auto-concludi` per segnare come concluse le prenotazioni confermate già passate.
+- Filtri per stato con conteggi nella lista del calendario.
+
+### Telefono e WhatsApp
+
+- Numero studio centralizzato in `VITE_STUDIO_PHONE`.
+- Link WhatsApp centralizzato in `VITE_STUDIO_WHATSAPP`.
+- Nuovo componente `src/components/WhatsAppButton.jsx`, visibile solo nelle pagine pubbliche e nascosto nella dashboard.
+
 ## Framework rilevato
 
 - React + Vite

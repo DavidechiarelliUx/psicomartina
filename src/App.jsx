@@ -15,6 +15,7 @@ import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Dashboard from "./pages/Dashboard";
 import DashboardLogin from "./pages/DashboardLogin";
+import CmsPage from "./pages/dashboard/CmsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -36,6 +37,30 @@ const AuthenticatedApp = () => {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/cms/blog"
+          element={
+            <ProtectedRoute>
+              <CmsPage type="blog" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/cms/servizi"
+          element={
+            <ProtectedRoute>
+              <CmsPage type="servizi" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/cms/recensioni"
+          element={
+            <ProtectedRoute>
+              <CmsPage type="recensioni" />
             </ProtectedRoute>
           }
         />

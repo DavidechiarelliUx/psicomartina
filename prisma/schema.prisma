@@ -47,10 +47,12 @@ model Client {
 
 model Service {
   id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code          ServiceType   @unique
+  code          String        @unique
   title         String
   subtitle      String?
   description   String
+  iconLabel     String?       @map("icon_label")
+  priceLabel    String?       @map("price_label")
   displayOrder  Int           @default(0) @map("display_order")
   active        Boolean       @default(true)
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)

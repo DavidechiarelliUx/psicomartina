@@ -4,6 +4,7 @@ import { Heart, Mail, Phone, MapPin } from "lucide-react";
 
 export default function Footer() {
   const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
+  const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
 
   return (
     <footer className="bg-foreground text-background/80">
@@ -46,9 +47,9 @@ export default function Footer() {
                 <Mail className="w-4 h-4 flex-shrink-0" />
                 {studioEmail}
               </a>
-              <a href="tel:+393331234567" className="flex items-center gap-3 text-sm text-background/60 hover:text-secondary transition-colors">
+              <a href={`tel:${studioPhone}`} className="flex items-center gap-3 text-sm text-background/60 hover:text-secondary transition-colors">
                 <Phone className="w-4 h-4 flex-shrink-0" />
-                +39 333 123 4567
+                {studioPhone}
               </a>
               <div className="flex items-start gap-3 text-sm text-background/60">
                 <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />

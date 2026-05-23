@@ -1,0 +1,3 @@
+ALTER TABLE "services" ALTER COLUMN "code" TYPE TEXT USING "code"::TEXT;
+ALTER TABLE "services" ADD COLUMN IF NOT EXISTS "icon_label" TEXT;
+ALTER TABLE "services" ADD COLUMN IF NOT EXISTS "price_label" TEXT;

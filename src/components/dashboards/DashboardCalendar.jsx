@@ -4,11 +4,20 @@ import { it } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ClienteModal from "../dashboard/ClienteModal";
+import { apiFetch } from "@/api/client";
 
 const STATUS_DOT = {
   pending: "bg-yellow-400",
-  confirmed: "bg-green-500",
+  confirmed: "bg-blue-500",
+  completed: "bg-gray-400",
   cancelled: "bg-red-400",
+};
+
+const STATUS_META = {
+  pending: { label: "In attesa", className: "bg-yellow-100 text-yellow-800" },
+  confirmed: { label: "Confermata", className: "bg-blue-100 text-blue-800" },
+  completed: { label: "Conclusa", className: "bg-gray-100 text-gray-700" },
+  cancelled: { label: "Annullata", className: "bg-red-100 text-red-800" },
 };
 
 const SERVICE_LABELS = {
@@ -23,6 +32,10 @@ export default function DashboardCalendar({ appointments }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedCliente, setSelectedCliente] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [localAppointments, setLocalAppointments] = useState(appointments);
+
+  React.useEffect(() => setLocalAppointments(appointments), [appointments]);
 
   const days = eachDayOfInterval({
     start: startOfMonth(currentMonth),
@@ -33,9 +46,35 @@ export default function DashboardCalendar({ appointments }) {
   const firstDayOfWeek = (startOfMonth(currentMonth).getDay() + 6) % 7; // Mon=0
   const paddingDays = Array.from({ length: firstDayOfWeek });
 
-  const getAppts = (day) => appointments.filter((a) => a.date && isSameDay(parseISO(a.date), day));
+  const sortedAppointments = [...localAppointments].sort((a, b) => {
+    const aDone = ["completed", "cancelled"].includes(a.status) ? 1 : 0;
+    const bDone = ["completed", "cancelled"].includes(b.status) ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    return `${a.date} ${a.time_slot}`.localeCompare(`${b.date} ${b.time_slot}`);
+  });
+  const filteredAppointments = statusFilter === "all" ? sortedAppointments : sortedAppointments.filter((a) => a.status === statusFilter);
+  const getAppts = (day) => filteredAppointments.filter((a) => a.date && isSameDay(parseISO(a.date), day));
 
   const selectedAppts = selectedDay ? getAppts(selectedDay) : [];
+  const counts = {
+    all: localAppointments.length,
+    pending: localAppointments.filter((a) => a.status === "pending").length,
+    confirmed: localAppointments.filter((a) => a.status === "confirmed").length,
+    completed: localAppointments.filter((a) => a.status === "completed").length,
+    cancelled: localAppointments.filter((a) => a.status === "cancelled").length,
+  };
+
+  const updateStatus = async (id, status) => {
+    setLocalAppointments((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
+    try {
+      await apiFetch(`/api/bookings/${id}/stato`, {
+        method: "PATCH",
+        body: JSON.stringify({ stato: status }),
+      });
+    } catch {
+      setLocalAppointments(appointments);
+    }
+  };
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
@@ -50,6 +89,25 @@ export default function DashboardCalendar({ appointments }) {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+      </div>
+
+      <div className="mb-5 flex flex-wrap gap-2">
+        {[
+          ["all", `Tutte (${counts.all})`, "bg-primary/10 text-primary"],
+          ["pending", `In attesa (${counts.pending})`, STATUS_META.pending.className],
+          ["confirmed", `Confermate (${counts.confirmed})`, STATUS_META.confirmed.className],
+          ["completed", `Concluse (${counts.completed})`, STATUS_META.completed.className],
+          ["cancelled", `Annullate (${counts.cancelled})`, STATUS_META.cancelled.className],
+        ].map(([value, label, className]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setStatusFilter(value)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === value ? className : "border border-border text-muted-foreground hover:bg-muted"}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-7 gap-1 mb-2">
@@ -127,15 +185,22 @@ export default function DashboardCalendar({ appointments }) {
                       <p className="text-sm font-semibold text-foreground">{a.time_slot}</p>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-medium mt-1 inline-block ${
-                          a.status === "confirmed"
-                            ? "bg-green-100 text-green-700"
-                            : a.status === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
+                          STATUS_META[a.status]?.className || "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {a.status === "confirmed" ? "Confermato" : a.status === "cancelled" ? "Cancellato" : "In attesa"}
+                        {STATUS_META[a.status]?.label || a.status}
                       </span>
+                      <select
+                        value={a.status}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) => updateStatus(a.id, event.target.value)}
+                        className="mt-2 w-full rounded-lg border border-border bg-background px-2 py-1 text-xs"
+                      >
+                        <option value="pending">In attesa</option>
+                        <option value="confirmed">Confermata</option>
+                        <option value="completed">Conclusa</option>
+                        <option value="cancelled">Annullata</option>
+                      </select>
                     </div>
                   </button>
                 ))}

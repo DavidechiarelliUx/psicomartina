@@ -5,37 +5,16 @@ import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import SectionHeading from "../shared/SectionHeading";
 import { apiFetch } from "@/api/client";
 
-const testimonials = [
-  {
-    name: "Maria L.",
-    text: "La Dott.ssa Sereni ha creato uno spazio dove finalmente mi sono sentita libera di essere me stessa. Dopo mesi di terapia, ho imparato a gestire l'ansia e a vivere con più serenità.",
-    rating: 5,
-  },
-  {
-    name: "Marco R.",
-    text: "Avevo paura di iniziare un percorso psicologico, ma la delicatezza e la professionalità della Dott.ssa mi hanno fatto sentire subito a mio agio. Un percorso che mi ha cambiato la vita.",
-    rating: 5,
-  },
-  {
-    name: "Sara P.",
-    text: "Grazie a questo percorso ho ritrovato fiducia in me stessa e nelle mie relazioni. L'approccio della Dott.ssa Sereni è empatico, mai giudicante, e davvero efficace.",
-    rating: 5,
-  },
-  {
-    name: "Luca D.",
-    text: "Un'esperienza trasformativa. La Dott.ssa Sereni mi ha aiutato ad elaborare un momento molto difficile con grande sensibilità e competenza. La consiglio a chiunque.",
-    rating: 5,
-  },
-];
-
 export default function TestimonialsSection() {
   const [current, setCurrent] = useState(0);
   const { data } = useQuery({
     queryKey: ["testimonials"],
-    queryFn: () => apiFetch("/api/testimonials"),
+    queryFn: () => apiFetch("/api/cms/recensioni"),
   });
 
-  const visibleTestimonials = data?.length ? data : testimonials;
+  const visibleTestimonials = data || [];
+
+  if (visibleTestimonials.length === 0) return null;
 
   const next = () => setCurrent((c) => (c + 1) % visibleTestimonials.length);
   const prev = () => setCurrent((c) => (c - 1 + visibleTestimonials.length) % visibleTestimonials.length);

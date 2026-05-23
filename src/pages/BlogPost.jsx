@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { blogPosts } from "@/data/blogPosts";
 import { apiFetch } from "@/api/client";
 import SEOHead from "@/components/SEOHead";
 import { blogSeoDescriptions, getCanonicalUrl, seoPages } from "@/config/seo";
@@ -28,11 +27,14 @@ export default function BlogPostPage() {
   const slug = path.split("/blog/")[1];
   const { data, isLoading } = useQuery({
     queryKey: ["blog-post", slug],
-    queryFn: () => apiFetch(`/api/blog-posts/${encodeURIComponent(slug)}`),
+    queryFn: async () => {
+      const posts = await apiFetch("/api/cms/blog");
+      return posts.find((p) => p.slug === slug || String(p.id) === slug) || null;
+    },
     enabled: Boolean(slug),
     retry: false,
   });
-  const post = data || blogPosts.find((p) => p.slug === slug || String(p.id) === slug);
+  const post = data;
 
   if (isLoading && !post) {
     return (

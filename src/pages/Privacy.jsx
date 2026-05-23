@@ -3,6 +3,7 @@ import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
+const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
 
 export default function Privacy() {
   return (
@@ -16,7 +17,7 @@ export default function Privacy() {
           <p>
             Dott.ssa Martina Giovinazzo — Via della Serenità 42, 00100 Roma (RM)
             <br />
-            Email: {studioEmail} — Tel: +39 333 123 4567
+            Email: {studioEmail} — Tel: {studioPhone}
             <br />
             P.IVA: 12345678901
           </p>

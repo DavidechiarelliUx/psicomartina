@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Clock, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import SectionHeading from "../components/shared/SectionHeading";
-import { blogPosts } from "@/data/blogPosts";
 import { apiFetch } from "@/api/client";
 import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
@@ -24,10 +23,9 @@ const categoryLabels = {
 export default function Blog() {
   const { data } = useQuery({
     queryKey: ["blog-posts"],
-    queryFn: () => apiFetch("/api/blog-posts"),
+    queryFn: () => apiFetch("/api/cms/blog"),
   });
-  const sourcePosts = data?.length ? data : blogPosts;
-  const publishedPosts = sourcePosts.filter((p) => p.published !== false);
+  const publishedPosts = (data || []).filter((p) => p.published !== false);
 
   return (
     <div className="pt-24 md:pt-28">

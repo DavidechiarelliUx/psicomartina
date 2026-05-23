@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
 import { Mail, Phone, MapPin, Clock, CheckCircle2, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
 import SectionHeading from "../components/shared/SectionHeading";
 import { apiFetch } from "@/api/client";
 import SEOHead from "@/components/SEOHead";
@@ -16,8 +20,10 @@ import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const timeSlots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
+const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
 
 export default function Contact() {
+  const [visibleMonth, setVisibleMonth] = useState(new Date());
   const [form, setForm] = useState({
     client_name: "",
     client_email: "",
@@ -30,11 +36,33 @@ export default function Contact() {
   });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const monthKey = format(visibleMonth, "yyyy-MM");
+  const { data: availability, isFetching: availabilityLoading } = useQuery({
+    queryKey: ["availability", monthKey],
+    queryFn: () => apiFetch(`/api/availability?month=${monthKey}`),
+  });
+  const bookedSlots = availability?.booked || {};
+  const selectedBookedSlots = form.date ? bookedSlots[form.date] || [] : [];
+  const availableSlots = timeSlots.filter((slot) => !selectedBookedSlots.includes(slot));
+
+  useEffect(() => {
+    if (form.time_slot && selectedBookedSlots.includes(form.time_slot)) {
+      setForm((prev) => ({ ...prev, time_slot: "" }));
+    }
+  }, [form.time_slot, selectedBookedSlots]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.privacy_accepted) {
       toast.error("Devi accettare la privacy policy per procedere.");
+      return;
+    }
+    if (!form.date || !form.time_slot) {
+      toast.error("Seleziona una data e una fascia oraria disponibile.");
+      return;
+    }
+    if (selectedBookedSlots.includes(form.time_slot)) {
+      toast.error("Questa fascia oraria è già confermata. Scegli un altro orario.");
       return;
     }
     setSending(true);
@@ -53,6 +81,14 @@ export default function Contact() {
   };
 
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+  const selectDate = (date) => {
+    const value = format(date, "yyyy-MM-dd");
+    setForm((prev) => ({
+      ...prev,
+      date: value,
+      time_slot: bookedSlots[value]?.includes(prev.time_slot) ? "" : prev.time_slot,
+    }));
+  };
 
   return (
     <div className="pt-24 md:pt-28">
@@ -81,11 +117,11 @@ export default function Contact() {
                       <p>{studioEmail}</p>
                     </div>
                   </a>
-                  <a href="tel:+393331234567" className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href={`tel:${studioPhone}`} className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
                     <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-foreground">Telefono</p>
-                      <p>+39 333 123 4567</p>
+                      <p>{studioPhone}</p>
                     </div>
                   </a>
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
@@ -180,24 +216,64 @@ export default function Contact() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.85fr)]">
                     <div className="space-y-2">
-                      <Label htmlFor="date">Data preferita *</Label>
-                      <Input id="date" type="date" required value={form.date} onChange={(e) => update("date", e.target.value)} />
+                      <Label>Data preferita *</Label>
+                      <div className="rounded-2xl border border-border bg-background p-2">
+                        <Calendar
+                          mode="single"
+                          selected={form.date ? new Date(`${form.date}T12:00:00`) : undefined}
+                          month={visibleMonth}
+                          onMonthChange={setVisibleMonth}
+                          onSelect={(date) => date && selectDate(date)}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          locale={it}
+                          className="mx-auto"
+                        />
+                      </div>
+                      <input type="hidden" required value={form.date} onChange={() => {}} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Orario preferito *</Label>
-                      <Select value={form.time_slot} onValueChange={(v) => update("time_slot", v)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona orario" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timeSlots.map((t) => (
-                            <SelectItem key={t} value={t}>
-                              {t}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Fasce orarie *</Label>
+                      <div className="rounded-2xl border border-border bg-background p-4">
+                        {form.date ? (
+                          <>
+                            <p className="mb-3 text-sm text-muted-foreground">
+                              {format(new Date(`${form.date}T12:00:00`), "EEEE d MMMM yyyy", { locale: it })}
+                            </p>
+                            {availabilityLoading && <p className="mb-3 text-xs text-muted-foreground">Controllo disponibilità in corso...</p>}
+                            <div className="grid grid-cols-2 gap-2">
+                              {timeSlots.map((slot) => {
+                                const booked = selectedBookedSlots.includes(slot);
+                                const disabled = booked || (availabilityLoading && !availability);
+                                const selected = form.time_slot === slot;
+                                return (
+                                  <button
+                                    key={slot}
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => update("time_slot", slot)}
+                                    className={`rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                                      selected
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : disabled
+                                          ? "cursor-not-allowed border-border bg-muted text-muted-foreground line-through opacity-60"
+                                          : "border-border hover:border-primary hover:bg-primary/5"
+                                    }`}
+                                  >
+                                    {slot}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {availableSlots.length === 0 && <p className="mt-3 text-xs text-muted-foreground">Nessuna fascia disponibile in questo giorno.</p>}
+                          </>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Seleziona un giorno dal calendario per vedere gli orari disponibili.</p>
+                        )}
+                      </div>
+                      <input type="hidden" required value={form.time_slot} onChange={() => {}} />
                     </div>
                   </div>
                   <div className="space-y-2">
