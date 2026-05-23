@@ -3,6 +3,7 @@ import { parseISO, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDa
 import { it } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ClienteModal from "../dashboard/ClienteModal";
 
 const STATUS_DOT = {
   pending: "bg-yellow-400",
@@ -21,6 +22,7 @@ const SERVICE_LABELS = {
 export default function DashboardCalendar({ appointments }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedCliente, setSelectedCliente] = useState(null);
 
   const days = eachDayOfInterval({
     start: startOfMonth(currentMonth),
@@ -105,7 +107,12 @@ export default function DashboardCalendar({ appointments }) {
               {selectedAppts
                 .sort((a, b) => a.time_slot?.localeCompare(b.time_slot))
                 .map((a) => (
-                  <div key={a.id} className="flex items-start justify-between gap-4 p-4 bg-muted/50 rounded-xl">
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setSelectedCliente(a)}
+                    className="flex w-full items-start justify-between gap-4 rounded-xl bg-muted/50 p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                     <div className="flex items-start gap-3">
                       <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${STATUS_DOT[a.status] || "bg-muted-foreground"}`} />
                       <div>
@@ -130,12 +137,13 @@ export default function DashboardCalendar({ appointments }) {
                         {a.status === "confirmed" ? "Confermato" : a.status === "cancelled" ? "Cancellato" : "In attesa"}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 ))}
             </div>
           )}
         </div>
       )}
+      {selectedCliente && <ClienteModal cliente={selectedCliente} onClose={() => setSelectedCliente(null)} />}
     </div>
   );
 }

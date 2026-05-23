@@ -15,6 +15,7 @@ import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const timeSlots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
 
 export default function Contact() {
   const [form, setForm] = useState({
@@ -71,13 +72,13 @@ export default function Contact() {
                 <h3 className="font-heading text-lg font-semibold text-foreground mb-6">Informazioni</h3>
                 <div className="space-y-5">
                   <a
-                    href="mailto:chiarellidavide99@gmail.com"
+                    href={`mailto:${studioEmail}`}
                     className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-foreground">Email</p>
-                      <p>chiarellidavide99@gmail.com</p>
+                      <p>{studioEmail}</p>
                     </div>
                   </a>
                   <a href="tel:+393331234567" className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">

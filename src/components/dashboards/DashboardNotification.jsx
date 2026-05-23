@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Calendar, MessageSquare } from "lucide-react";
 import { parseISO, format, isAfter } from "date-fns";
 import { it } from "date-fns/locale";
+import ClienteModal from "../dashboard/ClienteModal";
 
 const STATUS_LABELS = { pending: "In attesa", confirmed: "Confermato", cancelled: "Cancellato" };
 const STATUS_COLORS = {
@@ -11,6 +12,7 @@ const STATUS_COLORS = {
 };
 
 export default function DashboardNotifications({ appointments, contacts }) {
+  const [selectedCliente, setSelectedCliente] = useState(null);
   const now = new Date();
   const upcoming = appointments
     .filter((a) => isAfter(parseISO(a.date), now) && a.status !== "cancelled")
@@ -34,7 +36,12 @@ export default function DashboardNotifications({ appointments, contacts }) {
         ) : (
           <div className="space-y-2.5">
             {upcoming.map((a) => (
-              <div key={a.id} className="flex items-start justify-between gap-2 p-3 bg-muted/50 rounded-xl">
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => setSelectedCliente(a)}
+                className="flex w-full items-start justify-between gap-2 rounded-xl bg-muted/50 p-3 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <div>
                   <p className="text-xs font-medium text-foreground">{a.client_name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -44,7 +51,7 @@ export default function DashboardNotifications({ appointments, contacts }) {
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[a.status] || "bg-muted text-muted-foreground"}`}>
                   {STATUS_LABELS[a.status] || a.status}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -64,15 +71,21 @@ export default function DashboardNotifications({ appointments, contacts }) {
         ) : (
           <div className="space-y-2.5">
             {newContacts.map((c) => (
-              <div key={c.id} className="p-3 bg-muted/50 rounded-xl">
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setSelectedCliente(c)}
+                className="w-full rounded-xl bg-muted/50 p-3 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <p className="text-xs font-medium text-foreground">{c.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{c.email}</p>
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.message}</p>
-              </div>
+              </button>
             ))}
           </div>
         )}
       </div>
+      {selectedCliente && <ClienteModal cliente={selectedCliente} onClose={() => setSelectedCliente(null)} />}
     </div>
   );
 }

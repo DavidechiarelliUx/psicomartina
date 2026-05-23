@@ -2,6 +2,8 @@ import React from "react";
 import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
 
+const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
+
 export default function Privacy() {
   return (
     <div className="pt-24 md:pt-28 pb-20 md:pb-28 px-5 md:px-8">
@@ -14,7 +16,7 @@ export default function Privacy() {
           <p>
             Dott.ssa Martina Giovinazzo — Via della Serenità 42, 00100 Roma (RM)
             <br />
-            Email: chiarellidavide99@gmail.com — Tel: +39 333 123 4567
+            Email: {studioEmail} — Tel: +39 333 123 4567
             <br />
             P.IVA: 12345678901
           </p>
@@ -66,7 +68,7 @@ export default function Privacy() {
           <h2>Contatti</h2>
           <p>
             Per esercitare i tuoi diritti o per qualsiasi domanda relativa al trattamento dei tuoi dati, puoi scrivere a:{" "}
-            <a href="mailto:chiarellidavide99@gmail.com">chiarellidavide99@gmail.com</a>
+            <a href={`mailto:${studioEmail}`}>{studioEmail}</a>
           </p>
 
           <p className="text-sm mt-8">Ultimo aggiornamento: Maggio 2026</p>

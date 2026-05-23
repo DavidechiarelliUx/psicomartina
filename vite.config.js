@@ -3,6 +3,8 @@ import { defineConfig } from "vite";
 import fs from "node:fs";
 import path from "node:path";
 
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || "http://127.0.0.1:3001";
+
 const knownRoutes = new Set(["/", "/chi-sono", "/servizi", "/come-funziona", "/blog", "/contatti", "/privacy", "/dashboard"]);
 
 function isHtmlNavigation(req) {
@@ -55,7 +57,7 @@ export default defineConfig({
   plugins: [app404StatusPlugin(), react()],
   server: {
     proxy: {
-      "/api": "http://127.0.0.1:3001",
+      "/api": apiProxyTarget,
     },
   },
   resolve: {

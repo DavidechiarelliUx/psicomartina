@@ -14,11 +14,14 @@ import BlogPostPage from "./pages/BlogPost";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Dashboard from "./pages/Dashboard";
+import DashboardLogin from "./pages/DashboardLogin";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const AuthenticatedApp = () => {
   return (
     <Routes>
+      <Route path="/dashboard/login" element={<DashboardLogin />} />
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/chi-sono" element={<About />} />
@@ -28,7 +31,14 @@ const AuthenticatedApp = () => {
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/contatti" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

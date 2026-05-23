@@ -1,11 +1,11 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import DashboardStats from "../components/dashboards/DashboardStats";
 import DashboardCharts from "../components/dashboards/DashboardCharts";
 import DashboardNotifications from "../components/dashboards/DashboardNotification";
 import DashboardCalendar from "../components/dashboards/DashboardCalendar";
-import { BookOpen, CalendarPlus, HeartHandshake, Home, LayoutDashboard, ListChecks, UserRound } from "lucide-react";
+import { BookOpen, CalendarPlus, HeartHandshake, Home, LayoutDashboard, ListChecks, LogOut, UserRound } from "lucide-react";
 import { apiFetch } from "@/api/client";
 import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
@@ -20,16 +20,26 @@ const siteLinks = [
 ];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
       try {
         return await apiFetch("/api/dashboard");
-      } catch {
+      } catch (error) {
+        if (error.message.includes("Non autorizzato")) {
+          localStorage.removeItem("dashboard_token");
+          navigate("/dashboard/login", { replace: true });
+        }
         return { appointments: [], contacts: [], unavailable: true };
       }
     },
   });
+
+  const handleLogout = () => {
+    localStorage.removeItem("dashboard_token");
+    navigate("/dashboard/login", { replace: true });
+  };
 
   const appointments = data?.appointments || [];
   const contacts = data?.contacts || [];
@@ -74,9 +84,28 @@ export default function Dashboard() {
             Calendario
           </a>
         </nav>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-8 hidden w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
+        >
+          <LogOut className="w-4 h-4" />
+          Esci
+        </button>
       </aside>
 
       <div className="flex-1 max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">
+        <div className="flex justify-end lg:hidden">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <LogOut className="w-4 h-4" />
+            Esci
+          </button>
+        </div>
         {isLoading ? (
           <div className="bg-card border border-border rounded-2xl p-8 text-sm text-muted-foreground">Caricamento dati dal database...</div>
         ) : (

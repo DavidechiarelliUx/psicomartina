@@ -1,4 +1,46 @@
-# SEO Report - Psicomartina
+# Progetto Report - Psicomartina
+
+## Funzionalita implementate
+
+### Sistema email centralizzato
+
+- Email studio letta sempre da variabili ambiente: `VITE_STUDIO_EMAIL` sul frontend, `EMAIL_STUDIO` sul server.
+- SMTP configurato tramite `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`.
+- Nuova richiesta appuntamento:
+  - il backend salva la prenotazione nel database;
+  - invia una notifica allo studio con dati cliente, servizio, data, ora e messaggio;
+  - invia una conferma al cliente con riepilogo della richiesta.
+- Email personalizzata dalla dashboard:
+  - la modale cliente chiama `POST /api/email/send-to-client`;
+  - il server verifica il token dashboard;
+  - l'email viene inviata al cliente tramite il modulo centralizzato `server/lib/mailer.js`.
+- Nota operativa: `EMAIL_PASS` deve contenere una app password SMTP valida. Se resta il placeholder, la prenotazione viene comunque salvata e il server registra l'errore email.
+
+### Autenticazione dashboard
+
+- Credenziali configurate solo tramite variabili ambiente: `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD`, `JWT_SECRET`.
+- Endpoint login: `POST /api/auth/login`.
+- Token JWT salvato lato client in `localStorage` come `dashboard_token`.
+- Rotta `/dashboard` protetta con `src/components/ProtectedRoute.jsx`.
+- Rotta `/dashboard/login` con meta `noindex, nofollow`.
+- Bottone `Esci` nella dashboard per rimuovere il token e tornare alla login.
+
+### Componenti nuovi creati
+
+- `src/pages/DashboardLogin.jsx`: pagina accesso riservato.
+- `src/components/ProtectedRoute.jsx`: guard frontend per dashboard.
+- `src/components/dashboard/ClienteModal.jsx`: dettaglio cliente/appuntamento/contatto con invio email.
+- `src/components/dashboard/ListaModal.jsx`: lista filtrata da card statistiche, con apertura del dettaglio cliente.
+- `server/lib/auth.js`: creazione e verifica JWT.
+- `server/lib/mailer.js`: invio email centralizzato con Nodemailer.
+
+### Miglioramenti dashboard
+
+- Notifiche e nuovi messaggi cliccabili con apertura dettaglio cliente.
+- Eventi del calendario cliccabili con apertura dettaglio cliente.
+- Card statistiche cliccabili con lista filtrata.
+- Grafico "Andamento Prenotazioni" con selettore `Giorno`, `Settimana`, `Mese`.
+- Endpoint protetto `GET /api/bookings/stats?period=day|week|month` per aggregare le prenotazioni.
 
 ## Framework rilevato
 

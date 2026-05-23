@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { parseISO, format, eachMonthOfInterval, subMonths } from "date-fns";
-import { it } from "date-fns/locale";
+import { parseISO, format } from "date-fns";
+import { apiFetch } from "@/api/client";
 
 const COLORS = ["hsl(180,22%,45%)", "hsl(16,38%,59%)", "hsl(18,52%,77%)", "hsl(164,17%,21%)"];
 
@@ -14,20 +15,25 @@ const SERVICE_LABELS = {
 };
 
 export default function DashboardCharts({ appointments }) {
-  const [period, setPeriod] = useState("year"); // week | month | year
+  const [period, setPeriod] = useState("week");
 
   const now = new Date();
 
-  // Monthly data (last 12 months)
-  const months = eachMonthOfInterval({ start: subMonths(now, 11), end: now });
-  const monthlyData = months.map((m) => {
-    const label = format(m, "MMM", { locale: it });
-    const monthStr = format(m, "yyyy-MM");
-    const count = appointments.filter((a) => a.date?.startsWith(monthStr)).length;
+  const { data: remoteStats } = useQuery({
+    queryKey: ["booking-stats", period],
+    queryFn: () => apiFetch(`/api/bookings/stats?period=${period}`),
+  });
+
+  const dailyData = Array.from({ length: 13 }, (_, i) => {
+    const hour = i + 8;
+    const label = `${String(hour).padStart(2, "0")}:00`;
+    const count = appointments.filter((a) => {
+      const appointmentDate = a.date ? parseISO(a.date) : null;
+      return appointmentDate && format(appointmentDate, "yyyy-MM-dd") === format(now, "yyyy-MM-dd") && a.time_slot?.startsWith(String(hour).padStart(2, "0"));
+    }).length;
     return { label, count };
   });
 
-  // Weekly data (last 8 weeks)
   const weeklyData = Array.from({ length: 8 }, (_, i) => {
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - 7 * (7 - i));
@@ -38,6 +44,16 @@ export default function DashboardCharts({ appointments }) {
       const d = parseISO(a.date);
       return d >= weekStart && d < weekEnd;
     }).length;
+    return { label, count };
+  });
+
+  const monthPrefix = format(now, "yyyy-MM");
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const monthlyData = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    const label = String(day);
+    const datePrefix = `${monthPrefix}-${String(day).padStart(2, "0")}`;
+    const count = appointments.filter((a) => a.date?.startsWith(datePrefix)).length;
     return { label, count };
   });
 
@@ -52,7 +68,8 @@ export default function DashboardCharts({ appointments }) {
     value: v,
   }));
 
-  const chartData = period === "week" ? weeklyData : monthlyData;
+  const fallbackData = period === "day" ? dailyData : period === "month" ? monthlyData : weeklyData;
+  const chartData = remoteStats?.data || fallbackData;
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
@@ -60,8 +77,9 @@ export default function DashboardCharts({ appointments }) {
         <h3 className="font-heading text-lg font-semibold text-foreground">Andamento Prenotazioni</h3>
         <div className="flex gap-1 bg-muted rounded-lg p-1">
           {[
-            ["week", "Settimane"],
-            ["year", "Mensile"],
+            ["day", "Giorno"],
+            ["week", "Settimana"],
+            ["month", "Mese"],
           ].map(([v, l]) => (
             <button
               key={v}

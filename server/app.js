@@ -1,6 +1,8 @@
 import prismaPkg from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { loadEnv } from "./env.js";
+import { createDashboardToken, requireDashboardAuth } from "./lib/auth.js";
+import { sendBookingConfirmationToClient, sendBookingNotificationToStudio, sendCustomEmailToClient } from "./lib/mailer.js";
 
 loadEnv();
 
@@ -33,7 +35,7 @@ function sendJson(res, statusCode, payload) {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
   });
   res.end(JSON.stringify(payload));
 }
@@ -52,10 +54,21 @@ function formatDate(date) {
   return date.toISOString().slice(0, 10);
 }
 
+function splitFullName(fullName) {
+  const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+  return {
+    nome: parts[0] || "",
+    cognome: parts.slice(1).join(" "),
+  };
+}
+
 function mapAppointment(appointment) {
+  const nameParts = splitFullName(appointment.client.fullName);
   return {
     id: appointment.id,
     client_name: appointment.client.fullName,
+    nome: nameParts.nome,
+    cognome: nameParts.cognome,
     client_email: appointment.client.email,
     client_phone: appointment.client.phone,
     service_type: appointment.serviceType,
@@ -68,9 +81,12 @@ function mapAppointment(appointment) {
 }
 
 function mapContact(message) {
+  const nameParts = splitFullName(message.name);
   return {
     id: message.id,
     name: message.name,
+    nome: nameParts.nome,
+    cognome: nameParts.cognome,
     email: message.email,
     phone: message.phone,
     message: message.message,
@@ -172,6 +188,87 @@ async function createAppointment(payload) {
   return mapAppointment(appointment);
 }
 
+async function sendBookingEmails({ payload, appointment }) {
+  const nameParts = splitFullName(appointment.client.fullName);
+  const cliente = {
+    nome: nameParts.nome || appointment.client.fullName,
+    cognome: nameParts.cognome,
+    email: appointment.client.email,
+    telefono: appointment.client.phone,
+  };
+  const serviceName = appointment.service?.title || serviceLabels[appointment.serviceType] || appointment.serviceType;
+
+  try {
+    await sendBookingNotificationToStudio({
+      cliente,
+      data: payload.date,
+      ora: payload.time_slot,
+      servizio: serviceName,
+      messaggio: payload.notes,
+    });
+  } catch (error) {
+    console.error("Email notifica studio non inviata:", error.message);
+  }
+
+  try {
+    await sendBookingConfirmationToClient({
+      cliente,
+      data: payload.date,
+      ora: payload.time_slot,
+      servizio: serviceName,
+    });
+  } catch (error) {
+    console.error("Email conferma cliente non inviata:", error.message);
+  }
+}
+
+async function getBookingStats(period) {
+  const appointments = await prisma.appointment.findMany({
+    where: { deletedAt: null },
+    select: { scheduledDate: true, timeSlot: true },
+  });
+  const now = new Date();
+
+  if (period === "day") {
+    return Array.from({ length: 13 }, (_, index) => {
+      const hour = index + 8;
+      const label = `${String(hour).padStart(2, "0")}:00`;
+      const count = appointments.filter((appointment) => {
+        const sameDay = formatDate(appointment.scheduledDate) === formatDate(now);
+        const appointmentHour = Number(String(appointment.timeSlot || "0").split(":")[0]);
+        return sameDay && appointmentHour === hour;
+      }).length;
+      return { label, count };
+    });
+  }
+
+  if (period === "month") {
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+
+    return Array.from({ length: lastDay }, (_, index) => {
+      const day = index + 1;
+      const label = String(day);
+      const count = appointments.filter((appointment) => {
+        const date = appointment.scheduledDate;
+        return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day;
+      }).length;
+      return { label, count };
+    });
+  }
+
+  return Array.from({ length: 8 }, (_, index) => {
+    const weekStart = new Date(now);
+    weekStart.setHours(0, 0, 0, 0);
+    weekStart.setDate(now.getDate() - 7 * (7 - index));
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+    const count = appointments.filter((appointment) => appointment.scheduledDate >= weekStart && appointment.scheduledDate < weekEnd).length;
+    return { label: `Sett. ${index + 1}`, count };
+  });
+}
+
 export async function handleApiRequest(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
@@ -185,8 +282,23 @@ export async function handleApiRequest(req, res) {
       return sendJson(res, 200, { ok: true });
     }
 
+    if (req.method === "POST" && url.pathname === "/api/auth/login") {
+      const { username, password } = await readJson(req);
+      if (username === process.env.DASHBOARD_USERNAME && password === process.env.DASHBOARD_PASSWORD) {
+        return sendJson(res, 200, { token: createDashboardToken(username) });
+      }
+      return sendJson(res, 401, { error: "Credenziali non valide" });
+    }
+
     if (req.method === "GET" && url.pathname === "/api/dashboard") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
       return sendJson(res, 200, await getDashboard());
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/bookings/stats") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      const period = url.searchParams.get("period") || "week";
+      return sendJson(res, 200, { period, data: await getBookingStats(period) });
     }
 
     if (req.method === "GET" && url.pathname === "/api/services") {
@@ -223,7 +335,19 @@ export async function handleApiRequest(req, res) {
 
     if (req.method === "POST" && url.pathname === "/api/appointments") {
       const payload = await readJson(req);
-      return sendJson(res, 201, await createAppointment(payload));
+      const appointment = await createAppointment(payload);
+      await sendBookingEmails({ payload, appointment: { ...appointment, client: { fullName: appointment.client_name, email: appointment.client_email, phone: appointment.client_phone }, service: { title: appointment.service_label }, serviceType: appointment.service_type } });
+      return sendJson(res, 201, appointment);
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/email/send-to-client") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      const { toEmail, toNome, subject, body } = await readJson(req);
+      if (!toEmail || !subject || !body) {
+        return sendJson(res, 400, { error: "Email, oggetto e testo sono obbligatori." });
+      }
+      await sendCustomEmailToClient({ toEmail, toNome, subject, body });
+      return sendJson(res, 200, { ok: true });
     }
 
     return sendJson(res, 404, { error: "Endpoint non trovato" });

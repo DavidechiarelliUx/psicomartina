@@ -1,7 +1,9 @@
 export async function apiFetch(path, options = {}) {
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("dashboard_token") : null;
   const response = await fetch(path, {
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,
