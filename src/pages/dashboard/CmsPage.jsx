@@ -83,7 +83,7 @@ function CmsForm({ type, initialValue, mode, onSaved, onCancel }) {
     setBanner(null);
     try {
       const body = type === "blog" ? buildBlogFormData(form, imageFile) : JSON.stringify(form);
-      await apiFetch(mode === "edit" ? `${config.endpoint}/${form.id}` : config.endpoint, {
+      await apiFetch(mode === "edit" ? `${config.endpoint}?id=${encodeURIComponent(form.id)}` : config.endpoint, {
         method: mode === "edit" ? "PUT" : "POST",
         body,
       });
@@ -252,7 +252,7 @@ export default function CmsPage({ type }) {
   };
 
   const confirmDelete = async () => {
-    await apiFetch(`${config.endpoint}/${deleting.id}`, { method: "DELETE" });
+    await apiFetch(`${config.endpoint}?id=${encodeURIComponent(deleting.id)}`, { method: "DELETE" });
     setDeleting(null);
     refresh();
   };

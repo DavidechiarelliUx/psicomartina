@@ -701,6 +701,20 @@ export async function handleApiRequest(req, res) {
       const { payload, uploadedImage } = await readPayload(req, res, cmsListMatch[1]);
       return sendJson(res, 201, await createCmsItem(cmsListMatch[1], payload, uploadedImage));
     }
+    if (cmsListMatch && req.method === "PUT") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      const id = url.searchParams.get("id");
+      if (!id) return sendJson(res, 400, { error: "ID elemento CMS mancante." });
+      const { payload, uploadedImage } = await readPayload(req, res, cmsListMatch[1]);
+      return sendJson(res, 200, await updateCmsItem(cmsListMatch[1], id, payload, uploadedImage));
+    }
+    if (cmsListMatch && req.method === "DELETE") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      const id = url.searchParams.get("id");
+      if (!id) return sendJson(res, 400, { error: "ID elemento CMS mancante." });
+      await deleteCmsItem(cmsListMatch[1], id);
+      return sendJson(res, 200, { ok: true });
+    }
 
     const cmsItemMatch = url.pathname.match(/^\/api\/cms\/(blog|servizi|recensioni)\/([^/]+)$/);
     if (cmsItemMatch && req.method === "PUT") {
