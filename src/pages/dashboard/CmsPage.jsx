@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Pencil, Star, Trash2 } from "lucide-react";
@@ -39,11 +39,35 @@ function statusLabel(type, item) {
   return item.visible ? "Visibile" : "Nascosta";
 }
 
+function buildBlogFormData(form, imageFile) {
+  const formData = new FormData();
+  ["title", "slug", "category", "content", "published_at"].forEach((field) => {
+    formData.append(field, form[field] ?? "");
+  });
+  formData.append("published", form.published ? "true" : "false");
+  if (imageFile) formData.append("immagine", imageFile);
+  return formData;
+}
+
 function CmsForm({ type, initialValue, mode, onSaved, onCancel }) {
   const config = CONFIG[type];
   const [form, setForm] = useState(initialValue || initialForm(type));
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(initialValue?.cover_image || "");
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState(null);
+
+  useEffect(() => {
+    setForm(initialValue || initialForm(type));
+    setImageFile(null);
+    setImagePreview(initialValue?.cover_image || "");
+  }, [initialValue, type]);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   const update = (field, value) => {
     setForm((prev) => {
@@ -58,12 +82,17 @@ function CmsForm({ type, initialValue, mode, onSaved, onCancel }) {
     setSaving(true);
     setBanner(null);
     try {
+      const body = type === "blog" ? buildBlogFormData(form, imageFile) : JSON.stringify(form);
       await apiFetch(mode === "edit" ? `${config.endpoint}/${form.id}` : config.endpoint, {
         method: mode === "edit" ? "PUT" : "POST",
-        body: JSON.stringify(form),
+        body,
       });
       setBanner({ type: "ok", message: "Salvato!" });
-      if (mode !== "edit") setForm(initialForm(type));
+      if (mode !== "edit") {
+        setForm(initialForm(type));
+        setImageFile(null);
+        setImagePreview("");
+      }
       onSaved?.();
     } catch (error) {
       setBanner({ type: "error", message: error.message });
@@ -94,7 +123,16 @@ function CmsForm({ type, initialValue, mode, onSaved, onCancel }) {
               ))}
             </select>
           </label>
-          <ImageField value={form.cover_image} onChange={(v) => update("cover_image", v)} />
+          <ImageField
+            value={imagePreview}
+            onChange={(file) => {
+              setImageFile(file);
+              setImagePreview((current) => {
+                if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+                return URL.createObjectURL(file);
+              });
+            }}
+          />
           <TextArea label="Testo articolo" required rows={10} value={form.content} onChange={(v) => update("content", v)} placeholder="Scrivi qui il contenuto dell'articolo..." />
           <Field label="Data pubblicazione" type="date" value={form.published_at || today()} onChange={(v) => update("published_at", v)} />
           <Toggle labelA="Bozza" labelB="Pubblicato" value={form.published} onChange={(v) => update("published", v)} />
@@ -188,9 +226,7 @@ function ImageField({ value, onChange }) {
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => onChange(reader.result);
-            reader.readAsDataURL(file);
+            onChange(file);
           }}
           className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2"
         />

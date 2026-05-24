@@ -153,6 +153,7 @@ model BlogPost {
   content     String
   category    ServiceType?
   coverImage  String?     @map("cover_image")
+  coverImagePublicId String? @map("cover_image_public_id")
   published   Boolean     @default(true)
   readingTime Int?        @map("reading_time")
   publishedAt DateTime?   @map("published_at") @db.Timestamptz(6)

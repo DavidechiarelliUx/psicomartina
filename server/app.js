@@ -2,6 +2,7 @@ import prismaPkg from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { loadEnv } from "./env.js";
 import { createDashboardToken, requireDashboardAuth } from "./lib/auth.js";
+import { deleteImage, extractPublicId, uploadBlog } from "./lib/cloudinary.js";
 import { sendBookingConfirmationToClient, sendBookingNotificationToStudio, sendCustomEmailToClient } from "./lib/mailer.js";
 
 loadEnv();
@@ -69,7 +70,7 @@ function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   });
   res.end(JSON.stringify(payload));
@@ -83,6 +84,42 @@ async function readJson(req) {
   for await (const chunk of req) chunks.push(chunk);
   const body = Buffer.concat(chunks).toString("utf8");
   return body ? JSON.parse(body) : {};
+}
+
+function isMultipartRequest(req) {
+  return String(req.headers["content-type"] || "").includes("multipart/form-data");
+}
+
+function runUpload(req, res, upload) {
+  return new Promise((resolve, reject) => {
+    upload.single("immagine")(req, res, (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+}
+
+async function readPayload(req, res, type) {
+  if (type === "blog" && isMultipartRequest(req)) {
+    await runUpload(req, res, uploadBlog);
+    return {
+      payload: req.body || {},
+      uploadedImage: req.file
+        ? {
+            url: req.file.path,
+            publicId: req.file.filename,
+          }
+        : null,
+    };
+  }
+
+  return { payload: await readJson(req), uploadedImage: null };
+}
+
+function parseBoolean(value, fallback = false) {
+  if (value === true || value === "true" || value === "1") return true;
+  if (value === false || value === "false" || value === "0") return false;
+  return fallback;
 }
 
 function formatDate(date) {
@@ -140,6 +177,7 @@ function mapPost(post) {
     content: post.content,
     category: post.category,
     cover_image: post.coverImage,
+    cover_image_public_id: post.coverImagePublicId,
     published: post.published,
     reading_time: post.readingTime,
     created_date: (post.publishedAt || post.createdAt).toISOString(),
@@ -398,8 +436,17 @@ async function autoCompletePastAppointments() {
 
 async function getCmsList(type, { publicOnly = false } = {}) {
   if (type === "blog") {
+    const now = new Date();
     const posts = await prisma.blogPost.findMany({
-      where: { deletedAt: null, ...(publicOnly ? { published: true } : {}) },
+      where: {
+        deletedAt: null,
+        ...(publicOnly
+          ? {
+              published: true,
+              OR: [{ publishedAt: null }, { publishedAt: { lte: now } }],
+            }
+          : {}),
+      },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
     });
     return posts.map(mapPost);
@@ -426,31 +473,39 @@ async function getCmsList(type, { publicOnly = false } = {}) {
   throw error;
 }
 
-async function createCmsItem(type, payload) {
+async function createCmsItem(type, payload, uploadedImage = null) {
   if (type === "blog") {
     const title = String(payload.title || "").trim();
     if (!title) {
+      await deleteImage(uploadedImage?.publicId);
       const error = new Error("Il titolo è obbligatorio.");
       error.statusCode = 400;
       throw error;
     }
     const slug = slugify(payload.slug || title);
     const publishedAt = payload.published_at || payload.date || new Date().toISOString().slice(0, 10);
-    return mapPost(
-      await prisma.blogPost.create({
-        data: {
-          title,
-          slug,
-          excerpt: payload.excerpt || String(payload.content || "").slice(0, 150) || title,
-          content: payload.content || "",
-          category: blogCategoryToDb[payload.category] || null,
-          coverImage: payload.cover_image || null,
-          published: Boolean(payload.published),
-          readingTime: Math.max(1, Math.ceil(String(payload.content || "").split(/\s+/).filter(Boolean).length / 180)),
-          publishedAt: payload.published ? new Date(`${publishedAt}T09:00:00.000Z`) : null,
-        },
-      })
-    );
+    const published = parseBoolean(payload.published, true);
+    try {
+      return mapPost(
+        await prisma.blogPost.create({
+          data: {
+            title,
+            slug,
+            excerpt: payload.excerpt || String(payload.content || "").slice(0, 150) || title,
+            content: payload.content || "",
+            category: blogCategoryToDb[payload.category] || null,
+            coverImage: uploadedImage?.url || payload.cover_image || null,
+            coverImagePublicId: uploadedImage?.publicId || extractPublicId(payload.cover_image),
+            published,
+            readingTime: Math.max(1, Math.ceil(String(payload.content || "").split(/\s+/).filter(Boolean).length / 180)),
+            publishedAt: published ? new Date(`${publishedAt}T09:00:00.000Z`) : null,
+          },
+        })
+      );
+    } catch (error) {
+      await deleteImage(uploadedImage?.publicId);
+      throw error;
+    }
   }
 
   if (type === "servizi") {
@@ -500,10 +555,13 @@ async function createCmsItem(type, payload) {
   throw error;
 }
 
-async function updateCmsItem(type, id, payload) {
+async function updateCmsItem(type, id, payload, uploadedImage = null) {
   if (type === "blog") {
-    return mapPost(
-      await prisma.blogPost.update({
+    const existing = uploadedImage ? await prisma.blogPost.findUnique({ where: { id } }) : null;
+    try {
+      const hasPublished = payload.published !== undefined;
+      const published = hasPublished ? parseBoolean(payload.published) : undefined;
+      const updated = await prisma.blogPost.update({
         where: { id },
         data: {
           title: payload.title,
@@ -511,12 +569,18 @@ async function updateCmsItem(type, id, payload) {
           excerpt: payload.excerpt,
           content: payload.content,
           category: payload.category ? blogCategoryToDb[payload.category] || null : undefined,
-          coverImage: payload.cover_image,
-          published: typeof payload.published === "boolean" ? payload.published : undefined,
-          publishedAt: payload.published ? new Date(`${payload.published_at || payload.date || new Date().toISOString().slice(0, 10)}T09:00:00.000Z`) : null,
+          coverImage: uploadedImage ? uploadedImage.url : undefined,
+          coverImagePublicId: uploadedImage ? uploadedImage.publicId : undefined,
+          published,
+          publishedAt: hasPublished && published ? new Date(`${payload.published_at || payload.date || new Date().toISOString().slice(0, 10)}T09:00:00.000Z`) : hasPublished ? null : undefined,
         },
-      })
-    );
+      });
+      if (uploadedImage) await deleteImage(existing?.coverImagePublicId || extractPublicId(existing?.coverImage));
+      return mapPost(updated);
+    } catch (error) {
+      await deleteImage(uploadedImage?.publicId);
+      throw error;
+    }
   }
 
   if (type === "servizi") {
@@ -558,7 +622,11 @@ async function updateCmsItem(type, id, payload) {
 
 async function deleteCmsItem(type, id) {
   const data = { deletedAt: new Date() };
-  if (type === "blog") return prisma.blogPost.update({ where: { id }, data });
+  if (type === "blog") {
+    const post = await prisma.blogPost.findUnique({ where: { id } });
+    await deleteImage(post?.coverImagePublicId || extractPublicId(post?.coverImage));
+    return prisma.blogPost.update({ where: { id }, data });
+  }
   if (type === "servizi") return prisma.service.update({ where: { id }, data });
   if (type === "recensioni") return prisma.testimonial.update({ where: { id }, data });
   const error = new Error("Tipo CMS non valido.");
@@ -630,13 +698,15 @@ export async function handleApiRequest(req, res) {
     }
     if (cmsListMatch && req.method === "POST") {
       if (!requireDashboardAuth(req, res, sendJson)) return;
-      return sendJson(res, 201, await createCmsItem(cmsListMatch[1], await readJson(req)));
+      const { payload, uploadedImage } = await readPayload(req, res, cmsListMatch[1]);
+      return sendJson(res, 201, await createCmsItem(cmsListMatch[1], payload, uploadedImage));
     }
 
     const cmsItemMatch = url.pathname.match(/^\/api\/cms\/(blog|servizi|recensioni)\/([^/]+)$/);
     if (cmsItemMatch && req.method === "PUT") {
       if (!requireDashboardAuth(req, res, sendJson)) return;
-      return sendJson(res, 200, await updateCmsItem(cmsItemMatch[1], cmsItemMatch[2], await readJson(req)));
+      const { payload, uploadedImage } = await readPayload(req, res, cmsItemMatch[1]);
+      return sendJson(res, 200, await updateCmsItem(cmsItemMatch[1], cmsItemMatch[2], payload, uploadedImage));
     }
     if (cmsItemMatch && req.method === "DELETE") {
       if (!requireDashboardAuth(req, res, sendJson)) return;
@@ -659,7 +729,8 @@ export async function handleApiRequest(req, res) {
     if (req.method === "GET" && url.pathname.startsWith("/api/blog-posts/")) {
       const slug = decodeURIComponent(url.pathname.replace("/api/blog-posts/", ""));
       const post = await prisma.blogPost.findUnique({ where: { slug } });
-      if (!post || !post.published || post.deletedAt) return sendJson(res, 404, { error: "Articolo non trovato" });
+      const isScheduled = post?.publishedAt && post.publishedAt > new Date();
+      if (!post || !post.published || post.deletedAt || isScheduled) return sendJson(res, 404, { error: "Articolo non trovato" });
       return sendJson(res, 200, mapPost(post));
     }
 

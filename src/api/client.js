@@ -1,8 +1,9 @@
 export async function apiFetch(path, options = {}) {
   const token = typeof window !== "undefined" ? window.localStorage.getItem("dashboard_token") : null;
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const response = await fetch(path, {
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },

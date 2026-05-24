@@ -107,6 +107,7 @@ create table if not exists blog_posts (
   content text not null,
   category service_type,
   cover_image text,
+  cover_image_public_id text,
   published boolean not null default true,
   reading_time integer,
   published_at timestamptz,

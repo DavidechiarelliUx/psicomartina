@@ -57,6 +57,20 @@
 - Le `GET` pubbliche leggono solo contenuti pubblicati/attivi/visibili; le scritture richiedono token JWT.
 - Pagine pubbliche `Blog`, `Servizi` e recensioni Home collegate agli endpoint CMS.
 
+### Gestione immagini Cloudinary
+
+- Le cover caricate dal CMS Blog non vengono piu convertite in base64 e non vengono piu salvate come file nel database.
+- Il frontend invia la cover con `multipart/form-data`; l'anteprima locale usa `URL.createObjectURL`.
+- Il backend carica le immagini su Cloudinary tramite `server/lib/cloudinary.js`.
+- Il database salva solo:
+  - `cover_image`: URL pubblico Cloudinary;
+  - `cover_image_public_id`: identificatore Cloudinary usato per sostituzioni ed eliminazioni.
+- In aggiornamento articolo, una nuova cover sostituisce quella precedente e il vecchio asset viene eliminato da Cloudinary.
+- In eliminazione articolo, anche l'asset Cloudinary collegato viene eliminato.
+- Variabili ambiente richieste in produzione: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+- Script una tantum per migrare eventuali vecchie cover base64: `server/scripts/migrate-images-to-cloudinary.js`.
+- Verifica DB del 2026-05-24: trovate 2 cover esistenti ancora in base64. Eseguire lo script di migrazione dopo aver configurato credenziali Cloudinary reali.
+
 ### Prenotazioni
 
 - Stato prenotazione mostrato in italiano nella dashboard:
@@ -156,7 +170,9 @@ La sitemap include tutte le route pubbliche e i tre articoli locali del blog. Da
 ## Verifiche tecniche
 
 - `npm run lint`: OK
+- `npm run typecheck`: OK
 - `npm run build`: OK
+- `npx prisma migrate deploy`: OK, applicata migration `20260524120000_cloudinary_blog_images`.
 - Warning build residuo: bundle JavaScript sopra 500 kB. Non blocca la SEO, ma si può ottimizzare in futuro con code splitting.
 
 ## TODO
