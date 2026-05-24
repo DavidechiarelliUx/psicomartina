@@ -121,16 +121,52 @@ export default function DashboardShell({ children }) {
       </aside>
 
       <div className="flex-1 max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">
-        <div className="flex justify-end lg:hidden">
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <LogOut className="w-4 h-4" />
-            Esci
-          </button>
+        <div className="space-y-4 lg:hidden">
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <LayoutDashboard className="h-4 w-4 text-primary" />
+                <span className="font-heading text-base font-semibold text-foreground">Dashboard</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <LogOut className="w-4 h-4" />
+                Esci
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Link
+                to="/dashboard"
+                className={`rounded-xl px-3 py-2 text-sm ${
+                  location.pathname === "/dashboard" ? "bg-primary/10 font-medium text-primary" : "bg-muted/50 text-muted-foreground"
+                }`}
+              >
+                Panoramica
+              </Link>
+              {cmsLinks.map((link) => {
+                const Icon = link.icon;
+                const active = location.pathname === link.path;
+                return (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${
+                      active ? "bg-primary/10 font-medium text-primary" : "bg-muted/50 text-muted-foreground"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {link.label}
+                  </NavLink>
+                );
+              })}
+            </div>
+          </div>
         </div>
+
         {children}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Pencil, Star, Trash2 } from "lucide-react";
@@ -208,14 +208,12 @@ export default function CmsPage({ type }) {
   const [deleting, setDeleting] = useState(null);
   const { data = [], isLoading, error } = useQuery({ queryKey: ["cms", type], queryFn: () => apiFetch(`${config.endpoint}?all=1`) });
 
-  const editInitial = useMemo(() => {
-    if (!editing) return null;
-    if (type === "blog") return { ...editing, published_at: editing.created_date?.slice(0, 10) || today(), cover_image: editing.cover_image || "" };
-    if (type === "servizi") return { ...editing, title: editing.title || editing.name, short_description: editing.short_description || editing.subtitle || "", description: editing.description || "", display_order: editing.display_order || 0 };
-    return { ...editing, date: editing.date || editing.created_at?.slice(0, 10) || today() };
-  }, [editing, type]);
-
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["cms", type] });
+  const getEditInitial = (item) => {
+    if (type === "blog") return { ...item, published_at: item.created_date?.slice(0, 10) || today(), cover_image: item.cover_image || "" };
+    if (type === "servizi") return { ...item, title: item.title || item.name, short_description: item.short_description || item.subtitle || "", description: item.description || "", display_order: item.display_order || 0 };
+    return { ...item, date: item.date || item.created_at?.slice(0, 10) || today() };
+  };
 
   const confirmDelete = async () => {
     await apiFetch(`${config.endpoint}/${deleting.id}`, { method: "DELETE" });
@@ -264,7 +262,11 @@ export default function CmsPage({ type }) {
                       </p>
                     </div>
                     {mode === "update" ? (
-                      <button type="button" onClick={() => setEditing(item)} className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-muted">
+                      <button
+                        type="button"
+                        onClick={() => setEditing((current) => (current?.id === item.id ? null : item))}
+                        className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-muted"
+                      >
                         <Pencil className="h-4 w-4" /> Modifica
                       </button>
                     ) : (
@@ -273,10 +275,15 @@ export default function CmsPage({ type }) {
                       </button>
                     )}
                   </div>
+                  {mode === "update" && editing?.id === item.id && (
+                    <div className="mt-5 border-t border-border pt-5">
+                      <p className="mb-3 text-sm font-medium text-primary">Modifica: {itemTitle(type, item)}</p>
+                      <CmsForm key={item.id} type={type} mode="edit" initialValue={getEditInitial(item)} onSaved={refresh} onCancel={() => setEditing(null)} />
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
-            {editing && <CmsForm key={editing.id} type={type} mode="edit" initialValue={editInitial} onSaved={refresh} onCancel={() => setEditing(null)} />}
           </div>
         )}
       </div>
