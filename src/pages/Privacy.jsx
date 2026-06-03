@@ -4,6 +4,8 @@ import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
 const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
+const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
+const studioVat = import.meta.env.VITE_STUDIO_VAT || "12345678901";
 
 export default function Privacy() {
   return (
@@ -15,11 +17,11 @@ export default function Privacy() {
         <div className="prose prose-lg max-w-none prose-headings:font-heading prose-headings:text-foreground prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground prose-strong:text-foreground">
           <h2>Titolare del Trattamento</h2>
           <p>
-            Dott.ssa Martina Giovinazzo — Via della Serenità 42, 00100 Roma (RM)
+            Dott.ssa Martina Giovinazzo — {studioAddress}
             <br />
             Email: {studioEmail} — Tel: {studioPhone}
             <br />
-            P.IVA: 12345678901
+            P.IVA: {studioVat}
           </p>
 
           <h2>Tipologia di dati raccolti</h2>

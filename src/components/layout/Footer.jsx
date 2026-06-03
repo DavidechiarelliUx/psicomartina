@@ -5,6 +5,10 @@ import { Heart, Mail, Phone, MapPin } from "lucide-react";
 export default function Footer() {
   const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
   const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
+  const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
+  const studioVat = import.meta.env.VITE_STUDIO_VAT || "12345678901";
+  const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "12345";
+  const alboRegion = import.meta.env.VITE_STUDIO_ALBO_REGION || "Lazio";
 
   return (
     <footer className="bg-foreground text-background/80">
@@ -53,15 +57,17 @@ export default function Footer() {
               </a>
               <div className="flex items-start gap-3 text-sm text-background/60">
                 <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                Via della Serenità 42, Roma
+                {studioAddress}
               </div>
             </div>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-background/10 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-background/40">© {new Date().getFullYear()} Dott.ssa Martina Giovinazzo — P.IVA 12345678901 — Albo Psicologi n. 12345</p>
-          <p className="text-xs text-background/40">Iscrizione Albo Psicologi del Lazio</p>
+          <p className="text-xs text-background/40">
+            © {new Date().getFullYear()} Dott.ssa Martina Giovinazzo — P.IVA {studioVat} — Albo Psicologi n. {alboNumber}
+          </p>
+          <p className="text-xs text-background/40">Iscrizione Albo Psicologi del {alboRegion}</p>
         </div>
       </div>
     </footer>

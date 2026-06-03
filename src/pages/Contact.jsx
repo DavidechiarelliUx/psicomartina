@@ -21,6 +21,8 @@ import { getCanonicalUrl, seoPages } from "@/config/seo";
 const timeSlots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
 const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
+const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
+const studioMapUrl = `https://www.google.com/maps?q=${encodeURIComponent(studioAddress)}&output=embed`;
 
 export default function Contact() {
   const [visibleMonth, setVisibleMonth] = useState(new Date());
@@ -133,7 +135,7 @@ export default function Contact() {
                     <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-foreground">Studio</p>
-                      <p>Via della Serenità 42, Roma</p>
+                      <p>{studioAddress}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
@@ -152,6 +154,20 @@ export default function Contact() {
                   <br />
                   Offro anche sedute tramite videochiamata, con la stessa qualità e riservatezza delle sedute in studio.
                 </p>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                <div className="p-4">
+                  <p className="font-heading text-lg font-semibold text-foreground">Dove ricevo</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{studioAddress}</p>
+                </div>
+                <iframe
+                  title="Mappa dello studio"
+                  src={studioMapUrl}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="h-64 w-full border-0"
+                />
               </div>
             </div>
 

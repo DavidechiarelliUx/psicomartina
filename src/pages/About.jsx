@@ -9,12 +9,13 @@ import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const ABOUT_IMG = "/images/hero-portrait.png";
 const OFFICE_IMG = "/images/studio.png";
+const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "12345";
 
 const qualifications = [
   "Laurea Magistrale in Psicologia Clinica — Sapienza Università di Roma",
   "Specializzazione in Psicoterapia Cognitivo-Comportamentale",
   "Formazione EMDR per l'elaborazione dei traumi",
-  "Iscritta all'Albo degli Psicologi — n. 12345",
+  `Iscritta all'Albo degli Psicologi — n. ${alboNumber}`,
   "Formazione continua in Mindfulness e ACT",
 ];
 
