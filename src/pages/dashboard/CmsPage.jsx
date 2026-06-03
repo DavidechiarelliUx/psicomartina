@@ -23,7 +23,7 @@ const slugify = (value) =>
 
 function initialForm(type) {
   if (type === "blog") return { title: "", slug: "", category: "ansia", cover_image: "", content: "", published_at: today(), published: true };
-  if (type === "servizi") return { title: "", short_description: "", description: "", icon: "", price: "", display_order: 0, active: true };
+  if (type === "servizi") return { title: "", content_type: "servizio", short_description: "", description: "", icon: "", price: "", display_order: 0, active: true };
   return { name: "", text: "", rating: 5, date: today(), visible: true };
 }
 
@@ -142,6 +142,13 @@ function CmsForm({ type, initialValue, mode, onSaved, onCancel }) {
       {type === "servizi" && (
         <>
           <Field label="Nome servizio" required value={form.title} onChange={(v) => update("title", v)} />
+          <label className="block text-sm font-medium text-foreground">
+            Tipo contenuto
+            <select value={form.content_type || "servizio"} onChange={(e) => update("content_type", e.target.value)} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2">
+              <option value="servizio">Servizio</option>
+              <option value="ambito">Ambito di intervento</option>
+            </select>
+          </label>
           <TextArea label={`Descrizione breve (${(form.short_description || "").length}/160)`} maxLength={160} rows={3} value={form.short_description} onChange={(v) => update("short_description", v)} />
           <TextArea label="Descrizione estesa" rows={7} value={form.description} onChange={(v) => update("description", v)} />
           <Field label="Icona/emoji rappresentativa" value={form.icon} onChange={(v) => update("icon", v)} placeholder="Es. 🧘" />
@@ -247,7 +254,7 @@ export default function CmsPage({ type }) {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["cms", type] });
   const getEditInitial = (item) => {
     if (type === "blog") return { ...item, published_at: item.created_date?.slice(0, 10) || today(), cover_image: item.cover_image || "" };
-    if (type === "servizi") return { ...item, title: item.title || item.name, short_description: item.short_description || item.subtitle || "", description: item.description || "", display_order: item.display_order || 0 };
+    if (type === "servizi") return { ...item, title: item.title || item.name, content_type: item.content_type || "servizio", short_description: item.short_description || item.subtitle || "", description: item.description || "", display_order: item.display_order || 0 };
     return { ...item, date: item.date || item.created_at?.slice(0, 10) || today() };
   };
 
@@ -293,7 +300,7 @@ export default function CmsPage({ type }) {
                       <h3 className="font-heading text-lg font-semibold text-foreground">{itemTitle(type, item)}</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
                         {type === "blog" && `${item.created_date?.slice(0, 10) || ""} - ${statusLabel(type, item)}`}
-                        {type === "servizi" && `${item.price || "Prezzo non indicato"} - ${statusLabel(type, item)}`}
+                        {type === "servizi" && `${item.content_type === "ambito" ? "Ambito di intervento" : "Servizio"} - ${item.price || "Prezzo non indicato"} - ${statusLabel(type, item)}`}
                         {type === "recensioni" && `${"★".repeat(item.rating || 5)} - ${statusLabel(type, item)}`}
                       </p>
                     </div>

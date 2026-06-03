@@ -9,6 +9,7 @@ export const DEFAULT_SERVICES = [
     subtitle: "Accoglienza e orientamento",
     description: "Un primo incontro per conoscerci, ascoltare la richiesta e capire insieme quale percorso può essere più adatto.",
     icon: "☘️",
+    content_type: "servizio",
   },
   {
     id: "default-sostegno-psicologico",
@@ -17,6 +18,7 @@ export const DEFAULT_SERVICES = [
     subtitle: "Uno spazio di ascolto",
     description: "Percorsi di supporto per affrontare momenti di difficoltà, cambiamento, fatica emotiva o blocchi personali.",
     icon: "🤍",
+    content_type: "servizio",
   },
   {
     id: "default-potenziamento-cognitivo",
@@ -25,6 +27,7 @@ export const DEFAULT_SERVICES = [
     subtitle: "Risorse e strategie",
     description: "Attività mirate per sostenere attenzione, memoria, funzioni esecutive e metodo di studio in modo graduale e personalizzato.",
     icon: "🧠",
+    content_type: "servizio",
   },
   {
     id: "default-screening-dsa",
@@ -33,6 +36,7 @@ export const DEFAULT_SERVICES = [
     subtitle: "Valutazione iniziale",
     description: "Screening per individuare possibili difficoltà specifiche dell'apprendimento e orientare eventuali approfondimenti diagnostici.",
     icon: "📘",
+    content_type: "servizio",
   },
   {
     id: "default-ansia",
@@ -41,6 +45,7 @@ export const DEFAULT_SERVICES = [
     subtitle: "Regolazione emotiva",
     description: "Supporto per riconoscere e gestire ansia, stress, tensione, preoccupazioni ricorrenti e sovraccarico quotidiano.",
     icon: "🌿",
+    content_type: "ambito",
   },
   {
     id: "default-eta-evolutiva",
@@ -49,6 +54,7 @@ export const DEFAULT_SERVICES = [
     subtitle: "Infanzia e adolescenza",
     description: "Interventi rivolti a bambini e adolescenti per sostenere sviluppo emotivo, relazionale, scolastico e comportamentale.",
     icon: "🧩",
+    content_type: "ambito",
   },
   {
     id: "default-genitorialita",
@@ -57,6 +63,7 @@ export const DEFAULT_SERVICES = [
     subtitle: "Supporto ai genitori",
     description: "Uno spazio per accompagnare i genitori nella comprensione dei bisogni dei figli e nella gestione delle sfide educative.",
     icon: "👥",
+    content_type: "ambito",
   },
 ];
 

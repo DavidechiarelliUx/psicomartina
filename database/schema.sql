@@ -34,6 +34,7 @@ create table if not exists services (
   title text not null,
   subtitle text,
   description text not null,
+  content_type text not null default 'servizio' check (content_type in ('servizio', 'ambito')),
   display_order integer not null default 0,
   active boolean not null default true,
   created_at timestamptz not null default now(),
@@ -119,7 +120,7 @@ create table if not exists blog_posts (
 
 create index if not exists idx_clients_email on clients(email);
 create index if not exists idx_clients_deleted_at on clients(deleted_at);
-create index if not exists idx_services_active_order on services(active, display_order);
+create index if not exists idx_services_active_order on services(active, content_type, display_order);
 create index if not exists idx_services_deleted_at on services(deleted_at);
 create index if not exists idx_service_benefits_service_order on service_benefits(service_id, display_order);
 create index if not exists idx_appointments_scheduled_slot on appointments(scheduled_date, time_slot);

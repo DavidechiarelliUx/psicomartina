@@ -12,7 +12,7 @@ export default function ServicesPreview() {
     queryKey: ["cms-services-preview"],
     queryFn: () => apiFetch("/api/cms/servizi"),
   });
-  const previewServices = mergeServicesWithDefaults(services).filter((service) => SERVICE_CODES.includes(service.code));
+  const previewServices = mergeServicesWithDefaults(services).filter((service) => service.content_type === "servizio" || (!service.content_type && SERVICE_CODES.includes(service.code)));
 
   return (
     <section className="py-20 md:py-28 px-5 md:px-8">

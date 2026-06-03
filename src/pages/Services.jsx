@@ -50,8 +50,8 @@ export default function Services() {
     queryFn: () => apiFetch("/api/cms/servizi"),
   });
   const mergedServices = mergeServicesWithDefaults(services);
-  const serviceItems = mergedServices.filter((service) => SERVICE_CODES.includes(service.code));
-  const interventionItems = mergedServices.filter((service) => INTERVENTION_CODES.includes(service.code));
+  const serviceItems = mergedServices.filter((service) => service.content_type === "servizio" || (!service.content_type && SERVICE_CODES.includes(service.code)));
+  const interventionItems = mergedServices.filter((service) => service.content_type === "ambito" || (!service.content_type && INTERVENTION_CODES.includes(service.code)));
 
   return (
     <div className="pt-24 md:pt-28">
