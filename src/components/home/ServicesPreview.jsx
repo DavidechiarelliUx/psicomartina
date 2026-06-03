@@ -5,12 +5,14 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import SectionHeading from "../shared/SectionHeading";
 import { apiFetch } from "@/api/client";
+import { SERVICE_CODES, mergeServicesWithDefaults } from "@/config/servicesCatalog";
 
 export default function ServicesPreview() {
   const { data: services = [] } = useQuery({
     queryKey: ["cms-services-preview"],
     queryFn: () => apiFetch("/api/cms/servizi"),
   });
+  const previewServices = mergeServicesWithDefaults(services).filter((service) => SERVICE_CODES.includes(service.code));
 
   return (
     <section className="py-20 md:py-28 px-5 md:px-8">
@@ -22,7 +24,7 @@ export default function ServicesPreview() {
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {services.slice(0, 4).map((service, i) => (
+          {previewServices.slice(0, 4).map((service, i) => (
             <motion.div
               key={service.id}
               initial={{ opacity: 0, y: 20 }}

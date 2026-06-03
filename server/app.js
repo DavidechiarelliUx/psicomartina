@@ -24,8 +24,13 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const serviceLabels = {
-  primo_colloquio: "Primo Colloquio",
-  ansia: "Ansia",
+  primo_colloquio: "Primo colloquio",
+  sostegno_psicologico: "Sostegno psicologico",
+  potenziamento_cognitivo: "Potenziamento cognitivo",
+  screening_dsa: "Screening DSA",
+  ansia: "Ansia e stress",
+  eta_evolutiva: "Età evolutiva",
+  genitorialita: "Genitorialità",
   relazioni: "Relazioni",
   autostima: "Autostima",
   traumi: "Traumi",
@@ -51,6 +56,8 @@ const appointmentStatusToClient = {
 
 const blogCategoryToDb = {
   ansia: "ansia",
+  eta_evolutiva: "eta_evolutiva",
+  genitorialita: "genitorialita",
   relazioni: "relazioni",
   autostima: "autostima",
   traumi: "traumi",
@@ -150,6 +157,7 @@ function mapAppointment(appointment) {
     status: appointment.status,
     stato: appointmentStatusToClient[appointment.status] || appointment.status,
     notes: appointment.notes,
+    informed_consent_accepted: appointment.informedConsentAccepted,
   };
 }
 
@@ -242,8 +250,8 @@ async function createAppointment(payload) {
   const email = String(payload.client_email || "").trim().toLowerCase();
   const fullName = String(payload.client_name || "").trim();
 
-  if (!fullName || !email || !payload.date || !payload.time_slot || !payload.privacy_accepted) {
-    const error = new Error("Compila nome, email, data, orario e consenso privacy.");
+  if (!fullName || !email || !payload.date || !payload.time_slot || !payload.privacy_accepted || !payload.informed_consent_accepted) {
+    const error = new Error("Compila nome, email, data, orario, consenso privacy e consenso informato.");
     error.statusCode = 400;
     throw error;
   }
@@ -286,6 +294,7 @@ async function createAppointment(payload) {
       status: "pending",
       notes: payload.notes || null,
       privacyAccepted: true,
+      informedConsentAccepted: true,
       source: "website",
     },
     include: { client: true, service: true },
@@ -676,13 +685,15 @@ export async function handleApiRequest(req, res) {
     }
 
     const statusMatch = url.pathname.match(/^\/api\/bookings\/([^/]+)\/stato$/);
-    if (req.method === "PATCH" && statusMatch) {
+    const queryStatusId = url.pathname === "/api/bookings/stato" ? url.searchParams.get("id") : null;
+    const statusId = statusMatch?.[1] || queryStatusId;
+    if (req.method === "PATCH" && statusId) {
       if (!requireDashboardAuth(req, res, sendJson)) return;
       const { stato } = await readJson(req);
       const status = appointmentStatusToDb[stato];
       if (!status) return sendJson(res, 400, { error: "Stato prenotazione non valido." });
       const updated = await prisma.appointment.update({
-        where: { id: statusMatch[1] },
+        where: { id: statusId },
         data: { status },
         include: { client: true, service: true },
       });

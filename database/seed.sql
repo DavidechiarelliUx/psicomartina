@@ -2,11 +2,16 @@
 -- Usa UUID deterministici per mantenere relazioni coerenti e idempotenza.
 
 insert into services (id, code, title, subtitle, description, display_order, active) values
-('11111111-1111-4111-8111-111111111111','primo_colloquio','Primo Colloquio Conoscitivo','Il primo passo','Un incontro gratuito di 30 minuti per conoscerci, comprendere le esigenze e valutare il percorso più adatto.',1,true),
-('22222222-2222-4222-8222-222222222222','ansia','Ansia e Stress','Ritrovare la calma interiore','Percorsi per riconoscere e gestire ansia, stress, panico e tensione cronica nella vita quotidiana.',2,true),
-('33333333-3333-4333-8333-333333333333','relazioni','Difficoltà Relazionali','Costruire legami autentici','Supporto per comprendere dinamiche di coppia, famiglia, amicizia e confini personali.',3,true),
-('44444444-4444-4444-8444-444444444444','autostima','Autostima e Identità','Riscoprire il proprio valore','Percorsi per ridurre autocritica e perfezionismo e costruire una relazione più gentile con sé.',4,true),
-('55555555-5555-4555-8555-555555555555','traumi','Elaborazione dei Traumi','Guarire dalle ferite del passato','Accompagnamento delicato per rielaborare esperienze traumatiche e lutti significativi.',5,true)
+('11111111-1111-4111-8111-111111111111','primo_colloquio','Primo colloquio','Accoglienza e orientamento','Un primo incontro per conoscerci, ascoltare la richiesta e capire insieme quale percorso può essere più adatto.',1,true),
+('66666666-6666-4666-8666-666666666666','sostegno_psicologico','Sostegno psicologico','Uno spazio di ascolto','Percorsi di supporto per affrontare momenti di difficoltà, cambiamento, fatica emotiva o blocchi personali.',2,true),
+('77777777-7777-4777-8777-777777777777','potenziamento_cognitivo','Potenziamento cognitivo','Risorse e strategie','Attività mirate per sostenere attenzione, memoria, funzioni esecutive e metodo di studio in modo graduale e personalizzato.',3,true),
+('88888888-8888-4888-8888-888888888888','screening_dsa','Screening DSA','Valutazione iniziale','Screening per individuare possibili difficoltà specifiche dell’apprendimento e orientare eventuali approfondimenti diagnostici.',4,true),
+('22222222-2222-4222-8222-222222222222','ansia','Ansia e stress','Regolazione emotiva','Supporto per riconoscere e gestire ansia, stress, tensione, preoccupazioni ricorrenti e sovraccarico quotidiano.',20,true),
+('99999999-9999-4999-8999-999999999999','eta_evolutiva','Età evolutiva','Infanzia e adolescenza','Interventi rivolti a bambini e adolescenti per sostenere sviluppo emotivo, relazionale, scolastico e comportamentale.',21,true),
+('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa','genitorialita','Genitorialità','Supporto ai genitori','Uno spazio per accompagnare i genitori nella comprensione dei bisogni dei figli e nella gestione delle sfide educative.',22,true),
+('33333333-3333-4333-8333-333333333333','relazioni','Difficoltà Relazionali','Costruire legami autentici','Supporto per comprendere dinamiche di coppia, famiglia, amicizia e confini personali.',30,false),
+('44444444-4444-4444-8444-444444444444','autostima','Autostima e Identità','Riscoprire il proprio valore','Percorsi per ridurre autocritica e perfezionismo e costruire una relazione più gentile con sé.',31,false),
+('55555555-5555-4555-8555-555555555555','traumi','Elaborazione dei Traumi','Guarire dalle ferite del passato','Accompagnamento delicato per rielaborare esperienze traumatiche e lutti significativi.',32,false)
 on conflict (code) do update set title=excluded.title, subtitle=excluded.subtitle, description=excluded.description, display_order=excluded.display_order, active=excluded.active;
 
 insert into service_benefits (service_id, benefit, display_order) values
@@ -51,6 +56,8 @@ insert into appointments (id, client_id, service_id, service_type, scheduled_dat
 ('bbbbbbbb-0011-4000-8000-000000000011','aaaaaaaa-0011-4000-8000-000000000011','55555555-5555-4555-8555-555555555555','traumi','2026-07-07','15:00','confirmed',null,true,'phone', now() - interval '1 day'),
 ('bbbbbbbb-0012-4000-8000-000000000012','aaaaaaaa-0012-4000-8000-000000000012','33333333-3333-4333-8333-333333333333','relazioni','2026-07-13','17:00','completed','Seduta conclusa con follow-up.',true,'website', now() - interval '25 days')
 on conflict (id) do update set status=excluded.status, scheduled_date=excluded.scheduled_date, time_slot=excluded.time_slot, notes=excluded.notes;
+
+update appointments set informed_consent_accepted = true where privacy_accepted = true;
 
 insert into contact_messages (id, client_id, service_id, name, email, phone, message, status, privacy_accepted, created_at) values
 ('cccccccc-0001-4000-8000-000000000001','aaaaaaaa-0004-4000-8000-000000000004','11111111-1111-4111-8111-111111111111','Giulia','giulia@example.com','+39 333 444 0001','Vorrei informazioni sul primo colloquio conoscitivo.','new',true, now() - interval '2 hours'),

@@ -22,7 +22,12 @@ enum ContactStatus {
 
 enum ServiceType {
   primo_colloquio
+  sostegno_psicologico
+  potenziamento_cognitivo
+  screening_dsa
   ansia
+  eta_evolutiva
+  genitorialita
   relazioni
   autostima
   traumi
@@ -90,6 +95,7 @@ model Appointment {
   status          AppointmentStatus @default(pending)
   notes           String?
   privacyAccepted Boolean           @default(false) @map("privacy_accepted")
+  informedConsentAccepted Boolean   @default(false) @map("informed_consent_accepted")
   source          String            @default("website")
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

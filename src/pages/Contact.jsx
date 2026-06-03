@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
-import { Mail, Phone, MapPin, Clock, CheckCircle2, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, CheckCircle2, FileText, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -33,6 +33,7 @@ export default function Contact() {
     service_type: "",
     notes: "",
     privacy_accepted: false,
+    informed_consent_accepted: false,
   });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -55,6 +56,10 @@ export default function Contact() {
     e.preventDefault();
     if (!form.privacy_accepted) {
       toast.error("Devi accettare la privacy policy per procedere.");
+      return;
+    }
+    if (!form.informed_consent_accepted) {
+      toast.error("Devi confermare di aver letto il consenso informato per procedere.");
       return;
     }
     if (!form.date || !form.time_slot) {
@@ -171,6 +176,7 @@ export default function Contact() {
                         service_type: "",
                         notes: "",
                         privacy_accepted: false,
+                        informed_consent_accepted: false,
                       });
                     }}
                     variant="outline"
@@ -208,11 +214,13 @@ export default function Contact() {
                           <SelectValue placeholder="Seleziona..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="primo_colloquio">Primo Colloquio Conoscitivo</SelectItem>
-                          <SelectItem value="ansia">Ansia e Stress</SelectItem>
-                          <SelectItem value="relazioni">Difficoltà Relazionali</SelectItem>
-                          <SelectItem value="autostima">Autostima</SelectItem>
-                          <SelectItem value="traumi">Elaborazione Traumi</SelectItem>
+                          <SelectItem value="primo_colloquio">Primo colloquio</SelectItem>
+                          <SelectItem value="sostegno_psicologico">Sostegno psicologico</SelectItem>
+                          <SelectItem value="potenziamento_cognitivo">Potenziamento cognitivo</SelectItem>
+                          <SelectItem value="screening_dsa">Screening DSA</SelectItem>
+                          <SelectItem value="ansia">Ansia e stress</SelectItem>
+                          <SelectItem value="eta_evolutiva">Età evolutiva</SelectItem>
+                          <SelectItem value="genitorialita">Genitorialità</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -286,8 +294,33 @@ export default function Contact() {
                       rows={4}
                     />
                   </div>
+                  <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 md:p-5">
+                    <div className="mb-3 flex items-start gap-3">
+                      <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+                      <div>
+                        <h3 className="font-heading text-lg font-semibold text-foreground">Consenso informato</h3>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Il primo colloquio è uno spazio conoscitivo e di orientamento. La richiesta inviata tramite il sito non sostituisce una valutazione
+                          clinica, non rappresenta una presa in carico automatica e non è un servizio per emergenze. Durante il colloquio verranno chiariti
+                          obiettivi, modalità del percorso, durata indicativa, costi, riservatezza professionale e possibilità di interrompere il percorso in
+                          qualsiasi momento.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="informed-consent"
+                        checked={form.informed_consent_accepted}
+                        onCheckedChange={(v) => update("informed_consent_accepted", Boolean(v))}
+                      />
+                      <Label htmlFor="informed-consent" className="cursor-pointer text-xs leading-relaxed text-muted-foreground">
+                        Ho letto e compreso le informazioni preliminari sul consenso informato e chiedo di essere ricontattato/a per fissare il primo
+                        colloquio.
+                      </Label>
+                    </div>
+                  </div>
                   <div className="flex items-start gap-3">
-                    <Checkbox id="privacy" checked={form.privacy_accepted} onCheckedChange={(v) => update("privacy_accepted", v)} />
+                    <Checkbox id="privacy" checked={form.privacy_accepted} onCheckedChange={(v) => update("privacy_accepted", Boolean(v))} />
                     <Label htmlFor="privacy" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
                       Ho letto e accetto la{" "}
                       <Link to="/privacy" className="underline hover:text-primary">

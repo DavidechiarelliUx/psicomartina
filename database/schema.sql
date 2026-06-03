@@ -12,7 +12,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type service_type as enum ('primo_colloquio', 'ansia', 'relazioni', 'autostima', 'traumi');
+  create type service_type as enum ('primo_colloquio', 'sostegno_psicologico', 'potenziamento_cognitivo', 'screening_dsa', 'ansia', 'eta_evolutiva', 'genitorialita', 'relazioni', 'autostima', 'traumi');
 exception when duplicate_object then null; end $$;
 
 -- Anagrafica minima dei clienti/contatti che prenotano o scrivono dal sito.
@@ -61,6 +61,7 @@ create table if not exists appointments (
   status appointment_status not null default 'pending',
   notes text,
   privacy_accepted boolean not null default false,
+  informed_consent_accepted boolean not null default false,
   source text not null default 'website',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),

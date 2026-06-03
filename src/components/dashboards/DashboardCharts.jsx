@@ -7,8 +7,13 @@ import { apiFetch } from "@/api/client";
 const COLORS = ["hsl(180,22%,45%)", "hsl(16,38%,59%)", "hsl(18,52%,77%)", "hsl(164,17%,21%)"];
 
 const SERVICE_LABELS = {
-  primo_colloquio: "Primo Colloquio",
-  ansia: "Ansia",
+  primo_colloquio: "Primo colloquio",
+  sostegno_psicologico: "Sostegno psicologico",
+  potenziamento_cognitivo: "Potenziamento cognitivo",
+  screening_dsa: "Screening DSA",
+  ansia: "Ansia e stress",
+  eta_evolutiva: "Età evolutiva",
+  genitorialita: "Genitorialità",
   relazioni: "Relazioni",
   autostima: "Autostima",
   traumi: "Traumi",

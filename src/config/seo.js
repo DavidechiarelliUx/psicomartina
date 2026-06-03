@@ -18,7 +18,7 @@ export const seoPages = {
     title: "Servizi di Psicologia",
     path: "/servizi",
     description:
-      "Scopri i servizi di psicologia per ansia, stress, relazioni, autostima e traumi. Prenota un colloquio per trovare il percorso più adatto a te.",
+      "Scopri servizi e ambiti di intervento psicologico: primo colloquio, sostegno psicologico, potenziamento cognitivo, screening DSA, ansia, età evolutiva e genitorialità.",
   },
   howItWorks: {
     title: "Come Funziona",

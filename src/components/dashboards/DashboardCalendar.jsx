@@ -21,8 +21,13 @@ const STATUS_META = {
 };
 
 const SERVICE_LABELS = {
-  primo_colloquio: "Primo Colloquio",
-  ansia: "Ansia e Stress",
+  primo_colloquio: "Primo colloquio",
+  sostegno_psicologico: "Sostegno psicologico",
+  potenziamento_cognitivo: "Potenziamento cognitivo",
+  screening_dsa: "Screening DSA",
+  ansia: "Ansia e stress",
+  eta_evolutiva: "Età evolutiva",
+  genitorialita: "Genitorialità",
   relazioni: "Relazioni",
   autostima: "Autostima",
   traumi: "Traumi",
@@ -67,7 +72,7 @@ export default function DashboardCalendar({ appointments }) {
   const updateStatus = async (id, status) => {
     setLocalAppointments((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
     try {
-      await apiFetch(`/api/bookings/${id}/stato`, {
+      await apiFetch(`/api/bookings/stato?id=${encodeURIComponent(id)}`, {
         method: "PATCH",
         body: JSON.stringify({ stato: status }),
       });

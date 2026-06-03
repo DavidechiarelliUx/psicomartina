@@ -13,8 +13,13 @@ const STATUS_LABELS = {
 };
 
 const SERVICE_LABELS = {
-  primo_colloquio: "Primo Colloquio",
-  ansia: "Ansia e Stress",
+  primo_colloquio: "Primo colloquio",
+  sostegno_psicologico: "Sostegno psicologico",
+  potenziamento_cognitivo: "Potenziamento cognitivo",
+  screening_dsa: "Screening DSA",
+  ansia: "Ansia e stress",
+  eta_evolutiva: "Età evolutiva",
+  genitorialita: "Genitorialità",
   relazioni: "Relazioni",
   autostima: "Autostima",
   traumi: "Traumi",
@@ -42,6 +47,7 @@ function normalizeCliente(cliente) {
     ora: cliente.ora || cliente.time_slot || "",
     messaggio: cliente.messaggio || cliente.message || cliente.notes || "",
     stato: cliente.stato || cliente.status || "pending",
+    consensoInformato: Boolean(cliente.informed_consent_accepted),
   };
 }
 
@@ -145,6 +151,12 @@ export default function ClienteModal({ cliente, onClose }) {
             <span className="mt-2 block font-medium text-foreground">{normalized.servizio}</span>
             <span className="mt-2 inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
               {STATUS_LABELS[normalized.stato] || normalized.stato}
+            </span>
+          </div>
+          <div className="rounded-xl border border-border bg-background p-4 text-sm sm:col-span-2">
+            <span className="block text-xs text-muted-foreground">Consenso informato</span>
+            <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${normalized.consensoInformato ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+              {normalized.consensoInformato ? "Accettato" : "Non registrato"}
             </span>
           </div>
         </div>
