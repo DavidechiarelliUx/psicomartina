@@ -69,6 +69,18 @@ create table if not exists appointments (
   deleted_at timestamptz
 );
 
+-- Orari settimanali in cui il form pubblico può proporre fasce di prenotazione.
+create table if not exists booking_schedules (
+  id uuid primary key default gen_random_uuid(),
+  day_of_week integer not null unique check (day_of_week between 0 and 6),
+  is_open boolean not null default true,
+  opens_at text not null default '09:00',
+  closes_at text not null default '19:00',
+  slot_minutes integer not null default 60 check (slot_minutes in (30, 45, 60, 90)),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- Messaggi inviati dal form contatti; alimentano le notifiche "Nuovi messaggi".
 create table if not exists contact_messages (
   id uuid primary key default gen_random_uuid(),
@@ -128,6 +140,7 @@ create index if not exists idx_appointments_status_date on appointments(status, 
 create index if not exists idx_appointments_service_type on appointments(service_type);
 create index if not exists idx_appointments_client_id on appointments(client_id);
 create index if not exists idx_appointments_deleted_at on appointments(deleted_at);
+create index if not exists idx_booking_schedules_day_of_week on booking_schedules(day_of_week);
 create index if not exists idx_contact_messages_status_created on contact_messages(status, created_at);
 create index if not exists idx_contact_messages_email on contact_messages(email);
 create index if not exists idx_contact_messages_deleted_at on contact_messages(deleted_at);

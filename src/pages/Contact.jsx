@@ -18,7 +18,6 @@ import { apiFetch } from "@/api/client";
 import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
 
-const timeSlots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
 const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
 const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
@@ -45,7 +44,9 @@ export default function Contact() {
     queryFn: () => apiFetch(`/api/availability?month=${monthKey}`),
   });
   const bookedSlots = availability?.booked || {};
-  const selectedBookedSlots = form.date ? bookedSlots[form.date] || [] : [];
+  const selectedDay = form.date ? availability?.days?.[form.date] : null;
+  const selectedBookedSlots = form.date ? selectedDay?.booked || bookedSlots[form.date] || [] : [];
+  const timeSlots = selectedDay?.slots || [];
   const availableSlots = timeSlots.filter((slot) => !selectedBookedSlots.includes(slot));
 
   useEffect(() => {
@@ -251,7 +252,12 @@ export default function Contact() {
                           month={visibleMonth}
                           onMonthChange={setVisibleMonth}
                           onSelect={(date) => date && selectDate(date)}
-                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          disabled={(date) => {
+                            const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                            const dateKey = format(date, "yyyy-MM-dd");
+                            const dayAvailability = availability?.days?.[dateKey];
+                            return isPast || (Boolean(availability?.days) && !dayAvailability?.open);
+                          }}
                           locale={it}
                           className="mx-auto"
                         />
@@ -291,7 +297,8 @@ export default function Contact() {
                                 );
                               })}
                             </div>
-                            {availableSlots.length === 0 && <p className="mt-3 text-xs text-muted-foreground">Nessuna fascia disponibile in questo giorno.</p>}
+                            {timeSlots.length === 0 && <p className="mt-3 text-xs text-muted-foreground">Lo studio è chiuso in questo giorno.</p>}
+                            {timeSlots.length > 0 && availableSlots.length === 0 && <p className="mt-3 text-xs text-muted-foreground">Nessuna fascia disponibile in questo giorno.</p>}
                           </>
                         ) : (
                           <p className="text-sm text-muted-foreground">Seleziona un giorno dal calendario per vedere gli orari disponibili.</p>

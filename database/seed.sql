@@ -59,6 +59,16 @@ on conflict (id) do update set status=excluded.status, scheduled_date=excluded.s
 
 update appointments set informed_consent_accepted = true where privacy_accepted = true;
 
+insert into booking_schedules (day_of_week, is_open, opens_at, closes_at, slot_minutes) values
+(0,false,'09:00','19:00',60),
+(1,true,'09:00','19:00',60),
+(2,true,'09:00','19:00',60),
+(3,true,'09:00','19:00',60),
+(4,true,'09:00','19:00',60),
+(5,true,'09:00','19:00',60),
+(6,false,'09:00','19:00',60)
+on conflict (day_of_week) do update set is_open=excluded.is_open, opens_at=excluded.opens_at, closes_at=excluded.closes_at, slot_minutes=excluded.slot_minutes;
+
 insert into contact_messages (id, client_id, service_id, name, email, phone, message, status, privacy_accepted, created_at) values
 ('cccccccc-0001-4000-8000-000000000001','aaaaaaaa-0004-4000-8000-000000000004','11111111-1111-4111-8111-111111111111','Giulia','giulia@example.com','+39 333 444 0001','Vorrei informazioni sul primo colloquio conoscitivo.','new',true, now() - interval '2 hours'),
 ('cccccccc-0002-4000-8000-000000000002','aaaaaaaa-0005-4000-8000-000000000005','22222222-2222-4222-8222-222222222222','Marco','marco@example.com','+39 333 555 0002','Sto attraversando un periodo di forte stress lavorativo.','new',true, now() - interval '4 hours'),

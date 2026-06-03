@@ -63,6 +63,16 @@ const blogCategoryToDb = {
   traumi: "traumi",
 };
 
+const defaultBookingSchedule = [
+  { dayOfWeek: 0, isOpen: false, opensAt: "09:00", closesAt: "19:00", slotMinutes: 60 },
+  { dayOfWeek: 1, isOpen: true, opensAt: "09:00", closesAt: "19:00", slotMinutes: 60 },
+  { dayOfWeek: 2, isOpen: true, opensAt: "09:00", closesAt: "19:00", slotMinutes: 60 },
+  { dayOfWeek: 3, isOpen: true, opensAt: "09:00", closesAt: "19:00", slotMinutes: 60 },
+  { dayOfWeek: 4, isOpen: true, opensAt: "09:00", closesAt: "19:00", slotMinutes: 60 },
+  { dayOfWeek: 5, isOpen: true, opensAt: "09:00", closesAt: "19:00", slotMinutes: 60 },
+  { dayOfWeek: 6, isOpen: false, opensAt: "09:00", closesAt: "19:00", slotMinutes: 60 },
+];
+
 function slugify(value = "") {
   return String(value)
     .normalize("NFD")
@@ -131,6 +141,79 @@ function parseBoolean(value, fallback = false) {
 
 function formatDate(date) {
   return date.toISOString().slice(0, 10);
+}
+
+function timeToMinutes(value = "00:00") {
+  const [hours, minutes] = String(value).split(":").map(Number);
+  return (Number.isFinite(hours) ? hours : 0) * 60 + (Number.isFinite(minutes) ? minutes : 0);
+}
+
+function minutesToTime(value) {
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function generateTimeSlots(schedule) {
+  if (!schedule?.isOpen) return [];
+  const start = timeToMinutes(schedule.opensAt);
+  const end = timeToMinutes(schedule.closesAt);
+  const interval = Number(schedule.slotMinutes || 60);
+  if (end <= start || ![30, 45, 60, 90].includes(interval)) return [];
+  const slots = [];
+  for (let cursor = start; cursor + interval <= end; cursor += interval) {
+    slots.push(minutesToTime(cursor));
+  }
+  return slots;
+}
+
+function mapBookingSchedule(schedule) {
+  return {
+    day_of_week: schedule.dayOfWeek,
+    is_open: schedule.isOpen,
+    opens_at: schedule.opensAt,
+    closes_at: schedule.closesAt,
+    slot_minutes: schedule.slotMinutes,
+    slots: generateTimeSlots(schedule),
+  };
+}
+
+async function getBookingSchedules() {
+  const rows = await prisma.bookingSchedule.findMany({ orderBy: { dayOfWeek: "asc" } });
+  const byDay = new Map(rows.map((row) => [row.dayOfWeek, row]));
+  return defaultBookingSchedule.map((fallback) => mapBookingSchedule(byDay.get(fallback.dayOfWeek) || fallback));
+}
+
+async function updateBookingSchedules(payload) {
+  const schedules = Array.isArray(payload?.schedules) ? payload.schedules : [];
+  const validDays = new Set([0, 1, 2, 3, 4, 5, 6]);
+  const updates = schedules
+    .map((item) => ({
+      dayOfWeek: Number(item.day_of_week),
+      isOpen: Boolean(item.is_open),
+      opensAt: String(item.opens_at || "09:00"),
+      closesAt: String(item.closes_at || "19:00"),
+      slotMinutes: Number(item.slot_minutes || 60),
+    }))
+    .filter((item) => validDays.has(item.dayOfWeek) && /^\d{2}:\d{2}$/.test(item.opensAt) && /^\d{2}:\d{2}$/.test(item.closesAt) && [30, 45, 60, 90].includes(item.slotMinutes));
+
+  if (updates.length !== 7) {
+    const error = new Error("Configura tutti i 7 giorni della settimana.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await prisma.$transaction(
+    updates.map((item) =>
+      prisma.bookingSchedule.upsert({
+        where: { dayOfWeek: item.dayOfWeek },
+        update: item,
+        create: item,
+      })
+    )
+  );
+
+  return getBookingSchedules();
 }
 
 function splitFullName(fullName) {
@@ -324,6 +407,8 @@ async function getPublicAvailability(monthValue) {
   const [year, monthIndex] = month.split("-").map(Number);
   const start = new Date(Date.UTC(year, monthIndex - 1, 1));
   const end = new Date(Date.UTC(year, monthIndex, 1));
+  const schedules = await getBookingSchedules();
+  const scheduleByDay = new Map(schedules.map((schedule) => [schedule.day_of_week, schedule]));
   const appointments = await prisma.appointment.findMany({
     where: {
       deletedAt: null,
@@ -340,7 +425,18 @@ async function getPublicAvailability(monthValue) {
     return acc;
   }, {});
 
-  return { month, booked };
+  const days = {};
+  for (let cursor = new Date(start); cursor < end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+    const date = formatDate(cursor);
+    const schedule = scheduleByDay.get(cursor.getUTCDay());
+    days[date] = {
+      open: Boolean(schedule?.is_open),
+      slots: schedule?.slots || [],
+      booked: booked[date] || [],
+    };
+  }
+
+  return { month, booked, days, schedule: schedules };
 }
 
 async function sendBookingEmails({ payload, appointment }) {
@@ -674,6 +770,16 @@ export async function handleApiRequest(req, res) {
     if (req.method === "GET" && url.pathname === "/api/dashboard") {
       if (!requireDashboardAuth(req, res, sendJson)) return;
       return sendJson(res, 200, await getDashboard());
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/booking-schedules") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      return sendJson(res, 200, { schedules: await getBookingSchedules() });
+    }
+
+    if (req.method === "PUT" && url.pathname === "/api/booking-schedules") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      return sendJson(res, 200, { schedules: await updateBookingSchedules(await readJson(req)) });
     }
 
     if (req.method === "GET" && url.pathname === "/api/bookings/stats") {

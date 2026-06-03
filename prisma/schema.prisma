@@ -112,6 +112,20 @@ model Appointment {
   @@map("appointments")
 }
 
+model BookingSchedule {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dayOfWeek    Int      @unique @map("day_of_week")
+  isOpen       Boolean  @default(true) @map("is_open")
+  opensAt      String   @default("09:00") @map("opens_at")
+  closesAt     String   @default("19:00") @map("closes_at")
+  slotMinutes  Int      @default(60) @map("slot_minutes")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([dayOfWeek])
+  @@map("booking_schedules")
+}
+
 model ContactMessage {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   clientId        String?       @map("client_id") @db.Uuid

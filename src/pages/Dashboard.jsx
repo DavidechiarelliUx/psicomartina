@@ -5,6 +5,7 @@ import DashboardStats from "../components/dashboards/DashboardStats";
 import DashboardCharts from "../components/dashboards/DashboardCharts";
 import DashboardNotifications from "../components/dashboards/DashboardNotification";
 import DashboardCalendar from "../components/dashboards/DashboardCalendar";
+import BookingHoursSettings from "../components/dashboards/BookingHoursSettings";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { apiFetch } from "@/api/client";
 import SEOHead from "@/components/SEOHead";
@@ -60,6 +61,9 @@ export default function Dashboard() {
           </section>
           <section id="calendario">
             <DashboardCalendar appointments={appointments} />
+          </section>
+          <section id="orari-prenotazioni">
+            <BookingHoursSettings />
           </section>
         </>
       )}
