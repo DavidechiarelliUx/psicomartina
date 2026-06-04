@@ -378,6 +378,17 @@ function addWrappedText(doc, text, x, y, maxWidth, lineHeight = 6) {
   return y + lines.length * lineHeight;
 }
 
+function addKeyValueRow(doc, label, value, y) {
+  const lines = doc.splitTextToSize(String(value || "-"), 126);
+  const rowHeight = Math.max(8, lines.length * 6 + 2);
+  y = ensurePdfSpace(doc, y, rowHeight + 3);
+  doc.setFont("helvetica", "bold");
+  doc.text(`${label}:`, 18, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(lines, 64, y);
+  return y + rowHeight;
+}
+
 function ensurePdfSpace(doc, y, needed = 26) {
   if (y + needed <= 280) return y;
   doc.addPage();
@@ -423,11 +434,7 @@ function generateConsentPdf({ consent, appointmentPayload }) {
 
   doc.setFontSize(11);
   rows.forEach(([label, value]) => {
-    y = ensurePdfSpace(doc, y, 12);
-    doc.setFont("helvetica", "bold");
-    doc.text(`${label}:`, 18, y);
-    doc.setFont("helvetica", "normal");
-    y = addWrappedText(doc, value, 60, y, 130) + 2;
+    y = addKeyValueRow(doc, label, value, y);
   });
 
   y += 4;
@@ -660,7 +667,12 @@ async function createAppointment(payload) {
     throw error;
   }
 
-  return mapAppointment(appointment);
+  return {
+    ...mapAppointment(appointment),
+    consent_pdf_url: uploadResult.secure_url,
+    consent_pdf_filename: `consenso-${slugify(fullName || "cliente")}-${payload.date}.pdf`,
+    consent_pdf_buffer: pdfBuffer,
+  };
 }
 
 async function getPublicAvailability(monthValue) {
@@ -700,7 +712,7 @@ async function getPublicAvailability(monthValue) {
   return { month, booked, days, schedule: schedules };
 }
 
-async function sendBookingEmails({ payload, appointment }) {
+async function sendBookingEmails({ payload, appointment, consensoPdf }) {
   const nameParts = splitFullName(appointment.client.fullName);
   const cliente = {
     nome: nameParts.nome || appointment.client.fullName,
@@ -717,6 +729,7 @@ async function sendBookingEmails({ payload, appointment }) {
       ora: payload.time_slot,
       servizio: serviceName,
       messaggio: payload.notes,
+      consensoPdf,
     });
   } catch (error) {
     console.error("Email notifica studio non inviata:", error.message);
@@ -808,6 +821,54 @@ async function getInformedConsents(query = "") {
   });
 
   return consents.map(mapConsent);
+}
+
+async function sendGeneratedConsentPdf(res, consentId) {
+  const record = await prisma.informedConsent.findFirst({
+    where: { id: consentId, deletedAt: null },
+    include: {
+      appointment: true,
+    },
+  });
+
+  if (!record) {
+    return sendJson(res, 404, { error: "Consenso informato non trovato." });
+  }
+
+  const pdfBuffer = generateConsentPdf({
+    consent: {
+      subjectType: record.subjectType,
+      clientFullName: record.clientFullName,
+      clientEmail: record.clientEmail,
+      phone: record.phone,
+      fiscalCode: record.fiscalCode,
+      birthPlace: record.birthPlace,
+      birthDate: record.birthDate,
+      residenceCity: record.residenceCity,
+      residenceAddress: record.residenceAddress,
+      residenceNumber: record.residenceNumber,
+      serviceKind: record.serviceKind,
+      serviceOther: record.serviceOther,
+      minorFullName: record.minorFullName,
+      tutorFullName: record.tutorFullName,
+      secondTutorFullName: record.secondTutorFullName,
+      privacyConsent: record.privacyConsent,
+      termsAccepted: record.termsAccepted,
+      signedName: record.signedName,
+    },
+    appointmentPayload: {
+      date: formatDate(record.appointment.scheduledDate),
+      time_slot: record.appointment.timeSlot,
+    },
+  });
+
+  const filename = `consenso-${slugify(record.clientFullName || "cliente")}-${formatDate(record.createdAt)}.pdf`;
+  res.writeHead(200, {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `attachment; filename="${filename}"`,
+    "Cache-Control": "private, max-age=0, no-store",
+  });
+  res.end(pdfBuffer);
 }
 
 async function autoCompletePastAppointments() {
@@ -1064,6 +1125,8 @@ export async function handleApiRequest(req, res) {
 
     if (req.method === "GET" && url.pathname === "/api/consents") {
       if (!requireDashboardAuth(req, res, sendJson)) return;
+      const downloadId = url.searchParams.get("download");
+      if (downloadId) return sendGeneratedConsentPdf(res, downloadId);
       return sendJson(res, 200, { consents: await getInformedConsents(url.searchParams.get("q") || "") });
     }
 
@@ -1166,8 +1229,17 @@ export async function handleApiRequest(req, res) {
     if (req.method === "POST" && url.pathname === "/api/appointments") {
       const payload = await readJson(req);
       const appointment = await createAppointment(payload);
-      await sendBookingEmails({ payload, appointment: { ...appointment, client: { fullName: appointment.client_name, email: appointment.client_email, phone: appointment.client_phone }, service: { title: appointment.service_label }, serviceType: appointment.service_type } });
-      return sendJson(res, 201, appointment);
+      await sendBookingEmails({
+        payload,
+        appointment: { ...appointment, client: { fullName: appointment.client_name, email: appointment.client_email, phone: appointment.client_phone }, service: { title: appointment.service_label }, serviceType: appointment.service_type },
+        consensoPdf: {
+          filename: appointment.consent_pdf_filename,
+          content: appointment.consent_pdf_buffer,
+          url: appointment.consent_pdf_url,
+        },
+      });
+      const { consent_pdf_buffer, ...responseAppointment } = appointment;
+      return sendJson(res, 201, responseAppointment);
     }
 
     if (req.method === "POST" && url.pathname === "/api/email/send-to-client") {

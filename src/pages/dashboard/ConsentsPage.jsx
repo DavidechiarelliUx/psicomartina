@@ -24,6 +24,33 @@ export default function ConsentsPage() {
   const consents = data?.consents || [];
   const totalLabel = useMemo(() => `${consents.length} modul${consents.length === 1 ? "o" : "i"}`, [consents.length]);
 
+  const getConsentBlobUrl = async (consent) => {
+    const token = window.localStorage.getItem("dashboard_token");
+    const response = await fetch(`/api/consents?download=${encodeURIComponent(consent.id)}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) throw new Error("Download non riuscito.");
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  };
+
+  const openConsent = async (consent) => {
+    const url = await getConsentBlobUrl(consent);
+    window.open(url, "_blank", "noopener,noreferrer");
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  };
+
+  const downloadConsent = async (consent) => {
+    const url = await getConsentBlobUrl(consent);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `consenso-${consent.client_name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <DashboardShell>
       <SEOHead title="Consensi informati" description="Gestione moduli di consenso informato" noIndex />
@@ -90,17 +117,13 @@ export default function ConsentsPage() {
                     <TableCell>{formatItalianDate(consent.created_at)}</TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
-                        <Button asChild variant="outline" size="sm" className="gap-2 rounded-full">
-                          <a href={consent.pdf_url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            Apri
-                          </a>
+                        <Button type="button" variant="outline" size="sm" className="gap-2 rounded-full" onClick={() => openConsent(consent)}>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Apri
                         </Button>
-                        <Button asChild size="sm" className="gap-2 rounded-full">
-                          <a href={consent.pdf_url} target="_blank" rel="noopener noreferrer" download>
-                            <Download className="h-3.5 w-3.5" />
-                            Scarica
-                          </a>
+                        <Button type="button" size="sm" className="gap-2 rounded-full" onClick={() => downloadConsent(consent)}>
+                          <Download className="h-3.5 w-3.5" />
+                          Scarica
                         </Button>
                       </div>
                     </TableCell>
