@@ -1303,6 +1303,16 @@ export async function handleApiRequest(req, res) {
       return sendJson(res, 200, { updated: await autoCompletePastAppointments() });
     }
 
+    if (req.method === "POST" && url.pathname === "/api/booking-action") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      const { id, action } = await readJson(req);
+      if (!id || !["send-confirmation", "send-review-request"].includes(action)) {
+        return sendJson(res, 400, { error: "Azione appuntamento non valida." });
+      }
+      const updated = action === "send-confirmation" ? await sendConfirmationEmailForAppointment(id) : await sendReviewEmailForAppointment(id, req);
+      return sendJson(res, 200, updated);
+    }
+
     const bookingActionMatch = url.pathname.match(/^\/api\/bookings\/([^/]+)\/(send-confirmation|send-review-request)$/);
     if (req.method === "POST" && bookingActionMatch) {
       if (!requireDashboardAuth(req, res, sendJson)) return;

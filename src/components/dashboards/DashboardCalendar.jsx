@@ -119,11 +119,17 @@ export default function DashboardCalendar({ appointments }) {
         await applyStatus(pendingAction.appointment, pendingAction.status, mode === "send");
       }
       if (pendingAction.type === "send-confirmation") {
-        const updated = await apiFetch(`/api/bookings/${encodeURIComponent(pendingAction.appointment.id)}/send-confirmation`, { method: "POST" });
+        const updated = await apiFetch("/api/booking-action", {
+          method: "POST",
+          body: JSON.stringify({ id: pendingAction.appointment.id, action: "send-confirmation" }),
+        });
         patchAppointment(updated);
       }
       if (pendingAction.type === "send-review") {
-        const updated = await apiFetch(`/api/bookings/${encodeURIComponent(pendingAction.appointment.id)}/send-review-request`, { method: "POST" });
+        const updated = await apiFetch("/api/booking-action", {
+          method: "POST",
+          body: JSON.stringify({ id: pendingAction.appointment.id, action: "send-review-request" }),
+        });
         patchAppointment(updated);
       }
       setPendingAction(null);
