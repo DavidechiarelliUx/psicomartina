@@ -63,6 +63,13 @@ create table if not exists appointments (
   notes text,
   privacy_accepted boolean not null default false,
   informed_consent_accepted boolean not null default false,
+  confirmation_email_sent boolean not null default false,
+  confirmation_email_sent_at timestamptz,
+  confirmation_email_count integer not null default 0,
+  review_request_sent boolean not null default false,
+  review_request_sent_at timestamptz,
+  review_request_count integer not null default 0,
+  review_token uuid not null unique default gen_random_uuid(),
   source text not null default 'website',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -169,6 +176,7 @@ create index if not exists idx_service_benefits_service_order on service_benefit
 create index if not exists idx_appointments_scheduled_slot on appointments(scheduled_date, time_slot);
 create index if not exists idx_appointments_status_date on appointments(status, scheduled_date);
 create index if not exists idx_appointments_service_type on appointments(service_type);
+create index if not exists idx_appointments_review_token on appointments(review_token);
 create index if not exists idx_appointments_client_id on appointments(client_id);
 create index if not exists idx_appointments_deleted_at on appointments(deleted_at);
 create index if not exists idx_informed_consents_client_full_name on informed_consents(client_full_name);

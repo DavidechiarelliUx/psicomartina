@@ -98,6 +98,13 @@ model Appointment {
   notes           String?
   privacyAccepted Boolean           @default(false) @map("privacy_accepted")
   informedConsentAccepted Boolean   @default(false) @map("informed_consent_accepted")
+  confirmationEmailSent Boolean     @default(false) @map("confirmation_email_sent")
+  confirmationEmailSentAt DateTime? @map("confirmation_email_sent_at") @db.Timestamptz(6)
+  confirmationEmailCount Int        @default(0) @map("confirmation_email_count")
+  reviewRequestSent Boolean         @default(false) @map("review_request_sent")
+  reviewRequestSentAt DateTime?     @map("review_request_sent_at") @db.Timestamptz(6)
+  reviewRequestCount Int            @default(0) @map("review_request_count")
+  reviewToken     String            @unique @default(dbgenerated("gen_random_uuid()")) @map("review_token") @db.Uuid
   source          String            @default("website")
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -109,6 +116,7 @@ model Appointment {
   @@index([scheduledDate, timeSlot])
   @@index([status, scheduledDate])
   @@index([serviceType])
+  @@index([reviewToken])
   @@index([clientId])
   @@index([deletedAt])
   @@map("appointments")

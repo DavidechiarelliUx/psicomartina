@@ -85,7 +85,9 @@
   - `conclusa` -> `completed`
   - `annullata` -> `cancelled`
 - Cambio stato manuale da calendario dashboard tramite `PATCH /api/bookings/:id/stato`.
+- Quando una prenotazione passa a `confirmed`, la dashboard può inviare l'email di conferma e traccia `confirmation_email_sent`, data e conteggio invii.
 - Endpoint protetto `POST /api/bookings/auto-concludi` per segnare come concluse le prenotazioni confermate già passate.
+- Sugli appuntamenti conclusi la dashboard può inviare una richiesta recensione con link personale `/recensione/:token`; la recensione viene salvata come nascosta e verificabile dal CMS.
 - Filtri per stato con conteggi nella lista del calendario.
 
 ### Telefono e WhatsApp

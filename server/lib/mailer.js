@@ -129,7 +129,7 @@ export async function sendBookingNotificationToStudio({ cliente, data, ora, serv
   });
 }
 
-export async function sendBookingConfirmationToClient({ cliente, data, ora, servizio }) {
+export async function sendBookingRequestReceivedToClient({ cliente, data, ora, servizio }) {
   const transporter = getTransporter();
   await transporter.sendMail({
     from: sender(),
@@ -158,6 +158,67 @@ export async function sendBookingConfirmationToClient({ cliente, data, ora, serv
         </p>
       `,
       footerNote: "Se hai inviato questa richiesta per errore, puoi rispondere direttamente a questa email.",
+    }),
+  });
+}
+
+export async function sendAppointmentConfirmedToClient({ cliente, data, ora, servizio }) {
+  const transporter = getTransporter();
+  await transporter.sendMail({
+    from: sender(),
+    to: cliente.email,
+    subject: "Appuntamento confermato - Studio Psicomartina",
+    html: emailShell({
+      eyebrow: "Appuntamento confermato",
+      title: `Appuntamento confermato, ${cliente.nome}`,
+      intro: "Il suo appuntamento è stato confermato dallo studio. Di seguito trova il riepilogo.",
+      content: `
+        <div style="border:1px solid #DCE8D4;border-radius:16px;padding:18px 20px;background:#F5F8F1;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            ${infoRow("Servizio", servizio)}
+            ${infoRow("Data", data)}
+            ${infoRow("Orario", ora)}
+          </table>
+        </div>
+        <p style="margin:22px 0 0;font-size:15px;line-height:1.7;color:#5C6A63;">
+          In caso di necessità può rispondere direttamente a questa email.
+        </p>
+        <p style="margin:18px 0 0;font-size:15px;line-height:1.7;color:#5C6A63;">
+          A presto,<br/>
+          <strong style="color:#2E463A;">Studio Psicomartina</strong>
+        </p>
+      `,
+      footerNote: "Le chiediamo di avvisare lo studio in caso di impossibilità a presentarsi all'appuntamento.",
+    }),
+  });
+}
+
+export async function sendReviewRequestToClient({ cliente, servizio, reviewUrl }) {
+  const transporter = getTransporter();
+  await transporter.sendMail({
+    from: sender(),
+    to: cliente.email,
+    subject: "Grazie per l'incontro - Studio Psicomartina",
+    html: emailShell({
+      eyebrow: "Grazie",
+      title: `Grazie ${cliente.nome}`,
+      intro: "Grazie per essere venuto/a all'appuntamento. Se le fa piacere, può lasciare una recensione sul percorso o sull'esperienza con lo studio.",
+      content: `
+        <div style="border:1px solid #E9DDCF;border-radius:16px;padding:18px 20px;background:#FFFDF9;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            ${infoRow("Servizio", servizio)}
+          </table>
+        </div>
+        <div style="margin-top:22px;text-align:center;">
+          <a href="${escapeHtml(reviewUrl)}" style="display:inline-block;background:#E1B07E;color:#2D2D2D;text-decoration:none;border-radius:999px;padding:13px 22px;font-size:15px;font-weight:700;">
+            Lascia una recensione
+          </a>
+        </div>
+        <p style="margin:22px 0 0;font-size:14px;line-height:1.7;color:#6B756F;">
+          La recensione verrà letta dallo studio prima della pubblicazione.
+        </p>
+      `,
+      footerNote: "Il link è personale e collegato al suo appuntamento.",
     }),
   });
 }

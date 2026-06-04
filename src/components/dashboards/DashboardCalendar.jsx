@@ -69,15 +69,47 @@ export default function DashboardCalendar({ appointments }) {
     cancelled: localAppointments.filter((a) => a.status === "cancelled").length,
   };
 
-  const updateStatus = async (id, status) => {
-    setLocalAppointments((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
+  const patchAppointment = (updated) => {
+    setLocalAppointments((items) => items.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
+  };
+
+  const updateStatus = async (appointment, status) => {
+    const shouldAskConfirmation = status === "confirmed" && appointment.status !== "confirmed";
+    const sendConfirmation = shouldAskConfirmation
+      ? window.confirm(
+          appointment.confirmation_email_sent
+            ? "Questo cliente ha già ricevuto una conferma. Vuoi inviare una nuova email di conferma?"
+            : "Vuoi confermare l'appuntamento e inviare anche l'email di conferma al cliente?"
+        )
+      : false;
+
+    setLocalAppointments((items) => items.map((item) => (item.id === appointment.id ? { ...item, status } : item)));
     try {
-      await apiFetch(`/api/bookings/stato?id=${encodeURIComponent(id)}`, {
+      const updated = await apiFetch(`/api/bookings/stato?id=${encodeURIComponent(appointment.id)}`, {
         method: "PATCH",
-        body: JSON.stringify({ stato: status }),
+        body: JSON.stringify({ stato: status, send_confirmation_email: sendConfirmation }),
       });
+      patchAppointment(updated);
     } catch {
       setLocalAppointments(appointments);
+    }
+  };
+
+  const sendConfirmation = async (appointment) => {
+    try {
+      const updated = await apiFetch(`/api/bookings/${encodeURIComponent(appointment.id)}/send-confirmation`, { method: "POST" });
+      patchAppointment(updated);
+    } catch (error) {
+      window.alert(error.message);
+    }
+  };
+
+  const sendReviewRequest = async (appointment) => {
+    try {
+      const updated = await apiFetch(`/api/bookings/${encodeURIComponent(appointment.id)}/send-review-request`, { method: "POST" });
+      patchAppointment(updated);
+    } catch (error) {
+      window.alert(error.message);
     }
   };
 
@@ -195,10 +227,20 @@ export default function DashboardCalendar({ appointments }) {
                       >
                         {STATUS_META[a.status]?.label || a.status}
                       </span>
+                      {a.confirmation_email_sent && (
+                        <span className="mt-1 block rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-800">
+                          Conferma inviata{a.confirmation_email_count > 1 ? ` x${a.confirmation_email_count}` : ""}
+                        </span>
+                      )}
+                      {a.review_request_sent && (
+                        <span className="mt-1 block rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
+                          Recensione inviata{a.review_request_count > 1 ? ` x${a.review_request_count}` : ""}
+                        </span>
+                      )}
                       <select
                         value={a.status}
                         onClick={(event) => event.stopPropagation()}
-                        onChange={(event) => updateStatus(a.id, event.target.value)}
+                        onChange={(event) => updateStatus(a, event.target.value)}
                         className="mt-2 w-full rounded-lg border border-border bg-background px-2 py-1 text-xs"
                       >
                         <option value="pending">In attesa</option>
@@ -206,6 +248,30 @@ export default function DashboardCalendar({ appointments }) {
                         <option value="completed">Conclusa</option>
                         <option value="cancelled">Annullata</option>
                       </select>
+                      {a.status === "confirmed" && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            sendConfirmation(a);
+                          }}
+                          className="mt-2 w-full rounded-lg border border-primary/30 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/5"
+                        >
+                          {a.confirmation_email_sent ? "Reinvia conferma" : "Invia conferma"}
+                        </button>
+                      )}
+                      {a.status === "completed" && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            sendReviewRequest(a);
+                          }}
+                          className="mt-2 w-full rounded-lg border border-accent/50 px-2 py-1 text-xs font-medium text-foreground hover:bg-accent/10"
+                        >
+                          {a.review_request_sent ? "Reinvia recensione" : "Invia recensione"}
+                        </button>
+                      )}
                     </div>
                   </button>
                 ))}

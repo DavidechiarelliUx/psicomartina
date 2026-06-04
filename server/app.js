@@ -4,7 +4,7 @@ import { jsPDF } from "jspdf";
 import { loadEnv } from "./env.js";
 import { createDashboardToken, requireDashboardAuth } from "./lib/auth.js";
 import { deleteImage, deleteRawFile, extractPublicId, uploadBlog, uploadConsentPdf } from "./lib/cloudinary.js";
-import { sendBookingConfirmationToClient, sendBookingNotificationToStudio, sendCustomEmailToClient } from "./lib/mailer.js";
+import { sendAppointmentConfirmedToClient, sendBookingNotificationToStudio, sendBookingRequestReceivedToClient, sendCustomEmailToClient, sendReviewRequestToClient } from "./lib/mailer.js";
 
 loadEnv();
 
@@ -254,6 +254,12 @@ function mapAppointment(appointment) {
     stato: appointmentStatusToClient[appointment.status] || appointment.status,
     notes: appointment.notes,
     informed_consent_accepted: appointment.informedConsentAccepted,
+    confirmation_email_sent: appointment.confirmationEmailSent,
+    confirmation_email_sent_at: appointment.confirmationEmailSentAt?.toISOString() || null,
+    confirmation_email_count: appointment.confirmationEmailCount,
+    review_request_sent: appointment.reviewRequestSent,
+    review_request_sent_at: appointment.reviewRequestSentAt?.toISOString() || null,
+    review_request_count: appointment.reviewRequestCount,
   };
 }
 
@@ -736,14 +742,14 @@ async function sendBookingEmails({ payload, appointment, consensoPdf }) {
   }
 
   try {
-    await sendBookingConfirmationToClient({
+    await sendBookingRequestReceivedToClient({
       cliente,
       data: payload.date,
       ora: payload.time_slot,
       servizio: serviceName,
     });
   } catch (error) {
-    console.error("Email conferma cliente non inviata:", error.message);
+    console.error("Email ricevuta richiesta cliente non inviata:", error.message);
   }
 }
 
@@ -889,6 +895,144 @@ async function autoCompletePastAppointments() {
   });
 
   return result.count;
+}
+
+function getPublicBaseUrl(req) {
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5173";
+  const proto = req.headers["x-forwarded-proto"] || (String(host).includes("localhost") || String(host).startsWith("127.") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+function clientFromAppointment(appointment) {
+  const nameParts = splitFullName(appointment.client.fullName);
+  return {
+    nome: nameParts.nome || appointment.client.fullName,
+    cognome: nameParts.cognome,
+    email: appointment.client.email,
+    telefono: appointment.client.phone,
+  };
+}
+
+async function sendConfirmationEmailForAppointment(id) {
+  const appointment = await prisma.appointment.findUnique({
+    where: { id },
+    include: { client: true, service: true },
+  });
+  if (!appointment || appointment.deletedAt) {
+    const error = new Error("Appuntamento non trovato.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const cliente = clientFromAppointment(appointment);
+  const serviceName = appointment.service?.title || serviceLabels[appointment.serviceType] || appointment.serviceType;
+  await sendAppointmentConfirmedToClient({
+    cliente,
+    data: formatDate(appointment.scheduledDate),
+    ora: appointment.timeSlot,
+    servizio: serviceName,
+  });
+
+  const updated = await prisma.appointment.update({
+    where: { id },
+    data: {
+      confirmationEmailSent: true,
+      confirmationEmailSentAt: new Date(),
+      confirmationEmailCount: { increment: 1 },
+    },
+    include: { client: true, service: true },
+  });
+
+  return mapAppointment(updated);
+}
+
+async function sendReviewEmailForAppointment(id, req) {
+  const appointment = await prisma.appointment.findUnique({
+    where: { id },
+    include: { client: true, service: true },
+  });
+  if (!appointment || appointment.deletedAt) {
+    const error = new Error("Appuntamento non trovato.");
+    error.statusCode = 404;
+    throw error;
+  }
+  if (appointment.status !== "completed") {
+    const error = new Error("La richiesta recensione si può inviare solo per appuntamenti conclusi.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const cliente = clientFromAppointment(appointment);
+  const serviceName = appointment.service?.title || serviceLabels[appointment.serviceType] || appointment.serviceType;
+  await sendReviewRequestToClient({
+    cliente,
+    servizio: serviceName,
+    reviewUrl: `${getPublicBaseUrl(req)}/recensione/${appointment.reviewToken}`,
+  });
+
+  const updated = await prisma.appointment.update({
+    where: { id },
+    data: {
+      reviewRequestSent: true,
+      reviewRequestSentAt: new Date(),
+      reviewRequestCount: { increment: 1 },
+    },
+    include: { client: true, service: true },
+  });
+
+  return mapAppointment(updated);
+}
+
+async function getReviewContext(token) {
+  const appointment = await prisma.appointment.findUnique({
+    where: { reviewToken: token },
+    include: { client: true, service: true },
+  });
+  if (!appointment || appointment.deletedAt || appointment.status !== "completed") {
+    const error = new Error("Link recensione non valido o non ancora disponibile.");
+    error.statusCode = 404;
+    throw error;
+  }
+  const nameParts = splitFullName(appointment.client.fullName);
+  return {
+    client_name: appointment.client.fullName,
+    nome: nameParts.nome || appointment.client.fullName,
+    service_label: appointment.service?.title || serviceLabels[appointment.serviceType] || appointment.serviceType,
+    date: formatDate(appointment.scheduledDate),
+  };
+}
+
+async function submitPublicReview(token, payload) {
+  const appointment = await prisma.appointment.findUnique({
+    where: { reviewToken: token },
+    include: { client: true, service: true },
+  });
+  if (!appointment || appointment.deletedAt || appointment.status !== "completed") {
+    const error = new Error("Link recensione non valido o non ancora disponibile.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const name = sanitizeText(payload.name || appointment.client.fullName);
+  const text = sanitizeText(payload.text);
+  const rating = Math.min(5, Math.max(1, Number(payload.rating || 5)));
+  if (!name || !text) {
+    const error = new Error("Nome e testo recensione sono obbligatori.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await prisma.testimonial.create({
+    data: {
+      name,
+      text,
+      rating,
+      visible: false,
+      displayOrder: 0,
+    },
+  });
+
+  return { ok: true };
 }
 
 async function getCmsList(type, { publicOnly = false } = {}) {
@@ -1110,6 +1254,14 @@ export async function handleApiRequest(req, res) {
       return sendJson(res, 200, await getPublicAvailability(url.searchParams.get("month")));
     }
 
+    const publicReviewMatch = url.pathname.match(/^\/api\/reviews\/([^/]+)$/);
+    if (publicReviewMatch && req.method === "GET") {
+      return sendJson(res, 200, await getReviewContext(publicReviewMatch[1]));
+    }
+    if (publicReviewMatch && req.method === "POST") {
+      return sendJson(res, 201, await submitPublicReview(publicReviewMatch[1], await readJson(req)));
+    }
+
     if (req.method === "POST" && url.pathname === "/api/auth/login") {
       const { username, password } = await readJson(req);
       if (username === process.env.DASHBOARD_USERNAME && password === process.env.DASHBOARD_PASSWORD) {
@@ -1151,12 +1303,20 @@ export async function handleApiRequest(req, res) {
       return sendJson(res, 200, { updated: await autoCompletePastAppointments() });
     }
 
+    const bookingActionMatch = url.pathname.match(/^\/api\/bookings\/([^/]+)\/(send-confirmation|send-review-request)$/);
+    if (req.method === "POST" && bookingActionMatch) {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      const [, id, action] = bookingActionMatch;
+      const updated = action === "send-confirmation" ? await sendConfirmationEmailForAppointment(id) : await sendReviewEmailForAppointment(id, req);
+      return sendJson(res, 200, updated);
+    }
+
     const statusMatch = url.pathname.match(/^\/api\/bookings\/([^/]+)\/stato$/);
     const queryStatusId = url.pathname === "/api/bookings/stato" ? url.searchParams.get("id") : null;
     const statusId = statusMatch?.[1] || queryStatusId;
     if (req.method === "PATCH" && statusId) {
       if (!requireDashboardAuth(req, res, sendJson)) return;
-      const { stato } = await readJson(req);
+      const { stato, send_confirmation_email } = await readJson(req);
       const status = appointmentStatusToDb[stato];
       if (!status) return sendJson(res, 400, { error: "Stato prenotazione non valido." });
       const updated = await prisma.appointment.update({
@@ -1164,6 +1324,9 @@ export async function handleApiRequest(req, res) {
         data: { status },
         include: { client: true, service: true },
       });
+      if (status === "confirmed" && send_confirmation_email) {
+        return sendJson(res, 200, await sendConfirmationEmailForAppointment(statusId));
+      }
       return sendJson(res, 200, mapAppointment(updated));
     }
 

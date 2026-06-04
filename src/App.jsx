@@ -13,6 +13,7 @@ import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPost";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
+import ReviewForm from "./pages/ReviewForm";
 import Dashboard from "./pages/Dashboard";
 import DashboardLogin from "./pages/DashboardLogin";
 import CmsPage from "./pages/dashboard/CmsPage";
@@ -33,6 +34,7 @@ const AuthenticatedApp = () => {
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/contatti" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/recensione/:token" element={<ReviewForm />} />
         <Route
           path="/dashboard"
           element={

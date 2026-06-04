@@ -48,6 +48,10 @@ function normalizeCliente(cliente) {
     messaggio: cliente.messaggio || cliente.message || cliente.notes || "",
     stato: cliente.stato || cliente.status || "pending",
     consensoInformato: Boolean(cliente.informed_consent_accepted),
+    confirmationEmailSent: Boolean(cliente.confirmation_email_sent),
+    confirmationEmailCount: cliente.confirmation_email_count || 0,
+    reviewRequestSent: Boolean(cliente.review_request_sent),
+    reviewRequestCount: cliente.review_request_count || 0,
   };
 }
 
@@ -60,12 +64,24 @@ export default function ClienteModal({ cliente, onClose }) {
   useEffect(() => {
     if (!normalized) return undefined;
 
-    setSubject("Conferma appuntamento - Studio Psicomartina");
-    setBody(
-      `Gentile ${normalized.nome},\n\nLe scriviamo in merito alla sua richiesta${normalized.data ? ` del ${normalized.data}` : ""}${
-        normalized.ora ? ` alle ${normalized.ora}` : ""
-      }.\n\nIn caso di necessita non esiti a contattarci.`
-    );
+    if (normalized.stato === "confirmed") {
+      setSubject(normalized.confirmationEmailSent ? "Comunicazione appuntamento confermato - Studio Psicomartina" : "Conferma appuntamento - Studio Psicomartina");
+      setBody(
+        normalized.confirmationEmailSent
+          ? `Gentile ${normalized.nome},\n\nla conferma del suo appuntamento risulta già inviata. Le scriviamo per comunicarle ulteriori informazioni relative all'appuntamento del ${normalized.data} alle ${normalized.ora}.\n\nIn caso di necessità non esiti a contattarci.`
+          : `Gentile ${normalized.nome},\n\nle confermiamo il suo appuntamento del ${normalized.data} alle ${normalized.ora} per ${normalized.servizio}.\n\nIn caso di necessità non esiti a contattarci.`
+      );
+    } else if (normalized.stato === "completed") {
+      setSubject("Grazie per l'incontro - Studio Psicomartina");
+      setBody(`Gentile ${normalized.nome},\n\nla ringraziamo per essere venuto/a all'appuntamento.\n\nSe ha bisogno di ulteriori informazioni non esiti a contattarci.`);
+    } else {
+      setSubject("Comunicazione dallo Studio Psicomartina");
+      setBody(
+        `Gentile ${normalized.nome},\n\nLe scriviamo in merito alla sua richiesta${normalized.data ? ` del ${normalized.data}` : ""}${
+          normalized.ora ? ` alle ${normalized.ora}` : ""
+        }.\n\nIn caso di necessità non esiti a contattarci.`
+      );
+    }
     setEmailStatus("");
 
     const handleKey = (event) => {
@@ -158,6 +174,14 @@ export default function ClienteModal({ cliente, onClose }) {
             <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${normalized.consensoInformato ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
               {normalized.consensoInformato ? "Accettato" : "Non registrato"}
             </span>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${normalized.confirmationEmailSent ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"}`}>
+                {normalized.confirmationEmailSent ? `Email conferma inviata${normalized.confirmationEmailCount > 1 ? ` x${normalized.confirmationEmailCount}` : ""}` : "Email conferma non inviata"}
+              </span>
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${normalized.reviewRequestSent ? "bg-accent/20 text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                {normalized.reviewRequestSent ? `Richiesta recensione inviata${normalized.reviewRequestCount > 1 ? ` x${normalized.reviewRequestCount}` : ""}` : "Richiesta recensione non inviata"}
+              </span>
+            </div>
           </div>
         </div>
 
