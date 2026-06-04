@@ -168,10 +168,22 @@ export async function sendCustomEmailToClient({ toEmail, toNome, subject, body }
     from: sender(),
     to: toEmail,
     subject,
-    html: `
-      ${plainTextToHtml(body || `Gentile ${toNome || ""},`)}
-      <br/>
-      <p>A presto,<br/>Studio Psicomartina</p>
-    `,
+    html: emailShell({
+      eyebrow: "Comunicazione dallo studio",
+      title: subject || "Messaggio dallo Studio Psicomartina",
+      intro: toNome ? `Gentile ${toNome},` : "Gentile paziente,",
+      content: `
+        <div style="border:1px solid #E9DDCF;border-radius:16px;padding:20px 22px;background:#FFFDF9;">
+          <div style="font-size:15px;line-height:1.75;color:#2D2D2D;">
+            ${plainTextToHtml(body || "Le scriviamo in merito alla sua richiesta.")}
+          </div>
+        </div>
+        <p style="margin:22px 0 0;font-size:15px;line-height:1.7;color:#5C6A63;">
+          A presto,<br/>
+          <strong style="color:#2E463A;">Studio Psicomartina</strong>
+        </p>
+      `,
+      footerNote: "Questa comunicazione è riservata. Se l'hai ricevuta per errore, ti chiediamo di segnalarlo rispondendo a questa email.",
+    }),
   });
 }
