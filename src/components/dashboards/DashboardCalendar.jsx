@@ -3,6 +3,7 @@ import { parseISO, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDa
 import { it } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ClienteModal from "../dashboard/ClienteModal";
 import { apiFetch } from "@/api/client";
 
@@ -39,6 +40,8 @@ export default function DashboardCalendar({ appointments }) {
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [localAppointments, setLocalAppointments] = useState(appointments);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   React.useEffect(() => setLocalAppointments(appointments), [appointments]);
 
@@ -73,45 +76,88 @@ export default function DashboardCalendar({ appointments }) {
     setLocalAppointments((items) => items.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
   };
 
-  const updateStatus = async (appointment, status) => {
-    const shouldAskConfirmation = status === "confirmed" && appointment.status !== "confirmed";
-    const sendConfirmation = shouldAskConfirmation
-      ? window.confirm(
-          appointment.confirmation_email_sent
-            ? "Questo cliente ha già ricevuto una conferma. Vuoi inviare una nuova email di conferma?"
-            : "Vuoi confermare l'appuntamento e inviare anche l'email di conferma al cliente?"
-        )
-      : false;
-
+  const applyStatus = async (appointment, status, sendConfirmationEmail = false) => {
     setLocalAppointments((items) => items.map((item) => (item.id === appointment.id ? { ...item, status } : item)));
     try {
       const updated = await apiFetch(`/api/bookings/stato?id=${encodeURIComponent(appointment.id)}`, {
         method: "PATCH",
-        body: JSON.stringify({ stato: status, send_confirmation_email: sendConfirmation }),
+        body: JSON.stringify({ stato: status, send_confirmation_email: sendConfirmationEmail }),
       });
       patchAppointment(updated);
-    } catch {
+      return updated;
+    } catch (error) {
       setLocalAppointments(appointments);
+      throw error;
     }
   };
 
-  const sendConfirmation = async (appointment) => {
+  const updateStatus = async (appointment, status) => {
+    if (status === "confirmed" && appointment.status !== "confirmed") {
+      setPendingAction({ type: "confirm-status", appointment, status });
+      return;
+    }
     try {
-      const updated = await apiFetch(`/api/bookings/${encodeURIComponent(appointment.id)}/send-confirmation`, { method: "POST" });
-      patchAppointment(updated);
+      await applyStatus(appointment, status);
     } catch (error) {
-      window.alert(error.message);
+      setPendingAction({ type: "error", title: "Aggiornamento non riuscito", message: error.message });
     }
   };
 
-  const sendReviewRequest = async (appointment) => {
+  const sendConfirmation = (appointment) => {
+    setPendingAction({ type: "send-confirmation", appointment });
+  };
+
+  const sendReviewRequest = (appointment) => {
+    setPendingAction({ type: "send-review", appointment });
+  };
+
+  const runAction = async (mode) => {
+    if (!pendingAction || pendingAction.type === "error") return;
+    setActionLoading(true);
     try {
-      const updated = await apiFetch(`/api/bookings/${encodeURIComponent(appointment.id)}/send-review-request`, { method: "POST" });
-      patchAppointment(updated);
+      if (pendingAction.type === "confirm-status") {
+        await applyStatus(pendingAction.appointment, pendingAction.status, mode === "send");
+      }
+      if (pendingAction.type === "send-confirmation") {
+        const updated = await apiFetch(`/api/bookings/${encodeURIComponent(pendingAction.appointment.id)}/send-confirmation`, { method: "POST" });
+        patchAppointment(updated);
+      }
+      if (pendingAction.type === "send-review") {
+        const updated = await apiFetch(`/api/bookings/${encodeURIComponent(pendingAction.appointment.id)}/send-review-request`, { method: "POST" });
+        patchAppointment(updated);
+      }
+      setPendingAction(null);
     } catch (error) {
-      window.alert(error.message);
+      setPendingAction({ type: "error", title: "Operazione non riuscita", message: error.message });
+    } finally {
+      setActionLoading(false);
     }
   };
+
+  const actionCopy = pendingAction?.type === "confirm-status"
+    ? {
+        title: "Confermare l'appuntamento?",
+        message: pendingAction.appointment.confirmation_email_sent
+          ? "Questo cliente ha già ricevuto una conferma. Vuoi aggiornare lo stato e inviare una nuova email di conferma?"
+          : "Puoi confermare l'appuntamento e decidere se inviare subito l'email di conferma al cliente.",
+      }
+    : pendingAction?.type === "send-confirmation"
+      ? {
+          title: pendingAction.appointment.confirmation_email_sent ? "Reinviare la conferma?" : "Inviare conferma appuntamento?",
+          message: pendingAction.appointment.confirmation_email_sent
+            ? "La conferma risulta già inviata. Vuoi inviarne un'altra?"
+            : "Il cliente riceverà un'email con data, orario e servizio confermati.",
+        }
+      : pendingAction?.type === "send-review"
+        ? {
+            title: pendingAction.appointment.review_request_sent ? "Reinviare richiesta recensione?" : "Inviare richiesta recensione?",
+            message: pendingAction.appointment.review_request_sent
+              ? "La richiesta recensione risulta già inviata. Vuoi inviarne un'altra?"
+              : "Il cliente riceverà un link personale per lasciare una recensione, che resterà nascosta finché non verrà approvata.",
+          }
+        : pendingAction?.type === "error"
+          ? { title: pendingAction.title, message: pendingAction.message }
+          : null;
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
@@ -280,6 +326,50 @@ export default function DashboardCalendar({ appointments }) {
         </div>
       )}
       {selectedCliente && <ClienteModal cliente={selectedCliente} onClose={() => setSelectedCliente(null)} />}
+      <Dialog open={Boolean(pendingAction)} onOpenChange={(open) => !open && !actionLoading && setPendingAction(null)}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl text-foreground">{actionCopy?.title}</DialogTitle>
+            <DialogDescription className="leading-relaxed">{actionCopy?.message}</DialogDescription>
+          </DialogHeader>
+          {pendingAction?.appointment && (
+            <div className="rounded-xl border border-border bg-muted/50 p-4 text-sm">
+              <p className="font-medium text-foreground">{pendingAction.appointment.client_name}</p>
+              <p className="mt-1 text-muted-foreground">
+                {pendingAction.appointment.date} alle {pendingAction.appointment.time_slot}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            {pendingAction?.type === "error" ? (
+              <Button type="button" onClick={() => setPendingAction(null)} className="rounded-full">
+                Ho capito
+              </Button>
+            ) : pendingAction?.type === "confirm-status" ? (
+              <>
+                <Button type="button" variant="outline" disabled={actionLoading} onClick={() => setPendingAction(null)} className="rounded-full">
+                  Annulla
+                </Button>
+                <Button type="button" variant="outline" disabled={actionLoading} onClick={() => runAction("no-send")} className="rounded-full">
+                  Conferma senza email
+                </Button>
+                <Button type="button" disabled={actionLoading} onClick={() => runAction("send")} className="rounded-full">
+                  {actionLoading ? "Invio..." : "Conferma e invia email"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button type="button" variant="outline" disabled={actionLoading} onClick={() => setPendingAction(null)} className="rounded-full">
+                  Annulla
+                </Button>
+                <Button type="button" disabled={actionLoading} onClick={() => runAction("send")} className="rounded-full">
+                  {actionLoading ? "Invio..." : "Invia"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

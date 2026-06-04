@@ -118,17 +118,21 @@ export default function Contact() {
     setForm((prev) => {
       const next = { ...prev, [field]: value };
       if (field === "client_name") {
+        const shouldSyncName = !prev.consent.client_full_name || prev.consent.client_full_name === prev.client_name;
+        const shouldSyncSignature = !prev.consent.signed_name || prev.consent.signed_name === prev.client_name;
         next.consent = {
           ...next.consent,
-          client_full_name: next.consent.client_full_name || value,
-          signed_name: next.consent.signed_name || value,
+          client_full_name: shouldSyncName ? value : next.consent.client_full_name,
+          signed_name: shouldSyncSignature ? value : next.consent.signed_name,
         };
       }
       if (field === "client_email") {
-        next.consent = { ...next.consent, client_email: next.consent.client_email || value };
+        const shouldSyncEmail = !prev.consent.client_email || prev.consent.client_email === prev.client_email;
+        next.consent = { ...next.consent, client_email: shouldSyncEmail ? value : next.consent.client_email };
       }
       if (field === "client_phone") {
-        next.consent = { ...next.consent, phone: next.consent.phone || value };
+        const shouldSyncPhone = !prev.consent.phone || prev.consent.phone === prev.client_phone;
+        next.consent = { ...next.consent, phone: shouldSyncPhone ? value : next.consent.phone };
       }
       if (field === "privacy_accepted") {
         next.consent = { ...next.consent, privacy_consent: Boolean(value) };
@@ -460,6 +464,16 @@ export default function Contact() {
                           value={form.consent.client_email}
                           onChange={(e) => updateConsent("client_email", e.target.value)}
                           placeholder="email@example.com"
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="consent-phone">Telefono</Label>
+                        <Input
+                          id="consent-phone"
+                          value={form.consent.phone}
+                          onChange={(e) => updateConsent("phone", e.target.value)}
+                          placeholder="+39 ..."
                           className="bg-background"
                         />
                       </div>
