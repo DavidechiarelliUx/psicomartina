@@ -28,6 +28,7 @@
 ### Componenti nuovi creati
 
 - `src/pages/DashboardLogin.jsx`: pagina accesso riservato.
+- `src/pages/dashboard/ConsentsPage.jsx`: archivio dashboard dei consensi informati con ricerca e download PDF.
 - `src/components/ProtectedRoute.jsx`: guard frontend per dashboard.
 - `src/components/dashboard/ClienteModal.jsx`: dettaglio cliente/appuntamento/contatto con invio email.
 - `src/components/dashboard/ListaModal.jsx`: lista filtrata da card statistiche, con apertura del dettaglio cliente.
@@ -73,6 +74,11 @@
 
 ### Prenotazioni
 
+- La pagina `Contatti/Prenota` include ora un modulo di consenso informato compilabile con dati anagrafici, codice fiscale, residenza, tipologia assistito, prestazione e firma digitata.
+- Alla creazione della prenotazione il server genera un PDF del consenso, lo carica su Cloudinary e salva nel DB solo URL e `public_id`.
+- Nuova tabella `informed_consents` collegata 1:1 a `appointments` e N:1 a `clients`.
+- Nuova route dashboard protetta `/dashboard/consensi` per cercare i moduli per nome, email o codice fiscale e scaricare/aprire il PDF.
+- Endpoint protetto `GET /api/consents` per l'archivio dei consensi informati.
 - Stato prenotazione mostrato in italiano nella dashboard:
   - `in_attesa` -> `pending`
   - `confermata` -> `confirmed`

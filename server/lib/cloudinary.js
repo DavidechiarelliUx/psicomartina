@@ -42,12 +42,40 @@ export const uploadBlog = multer({ storage: blogStorage });
 export const uploadServizi = multer({ storage: serviziStorage });
 export const uploadGeneric = multer({ storage: genericStorage });
 
+export function uploadConsentPdf(buffer, publicId) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "psicomartina/consensi",
+        public_id: publicId,
+        resource_type: "raw",
+        format: "pdf",
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+
+    stream.end(buffer);
+  });
+}
+
 export async function deleteImage(publicId) {
   if (!publicId) return;
   try {
     await cloudinary.uploader.destroy(publicId);
   } catch (error) {
     console.error("Cloudinary delete error:", error);
+  }
+}
+
+export async function deleteRawFile(publicId) {
+  if (!publicId) return;
+  try {
+    await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
+  } catch (error) {
+    console.error("Cloudinary raw delete error:", error);
   }
 }
 

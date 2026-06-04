@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, CalendarPlus, ChevronDown, HeartHandshake, Home, LayoutDashboard, ListChecks, LogOut, MessageSquareQuote, Plus, UserRound } from "lucide-react";
+import { BookOpen, CalendarPlus, ChevronDown, FileText, HeartHandshake, Home, LayoutDashboard, ListChecks, LogOut, MessageSquareQuote, Plus, UserRound } from "lucide-react";
 
 const siteLinks = [
   { label: "Home", path: "/", icon: Home },
@@ -28,6 +28,7 @@ export default function DashboardShell({ children }) {
       { label: "Panoramica", path: "/dashboard#statistiche" },
       { label: "Grafici", path: "/dashboard#grafici" },
       { label: "Calendario", path: "/dashboard#calendario" },
+      { label: "Consensi informati", path: "/dashboard/consensi", icon: FileText },
     ],
     []
   );
@@ -60,17 +61,23 @@ export default function DashboardShell({ children }) {
         <div className="my-6 border-t border-border" />
 
         <nav className="space-y-1">
-          {secondaryLinks.map((link) => (
-            <Link
-              key={link.label}
-              to={link.path}
-              className={`block rounded-xl px-3 py-2 text-sm ${
-                location.pathname === "/dashboard" && location.hash === link.path.split("#")[1] ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {secondaryLinks.map((link) => {
+            const Icon = link.icon;
+            const hash = link.path.split("#")[1];
+            const active = link.path.startsWith("/dashboard#") ? location.pathname === "/dashboard" && location.hash === `#${hash}` : location.pathname === link.path;
+            return (
+              <Link
+                key={link.label}
+                to={link.path}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${
+                  active ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {Icon && <Icon className="h-4 w-4" />}
+                {link.label}
+              </Link>
+            );
+          })}
 
           <button
             type="button"
@@ -146,6 +153,15 @@ export default function DashboardShell({ children }) {
                 }`}
               >
                 Panoramica
+              </Link>
+              <Link
+                to="/dashboard/consensi"
+                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${
+                  location.pathname === "/dashboard/consensi" ? "bg-primary/10 font-medium text-primary" : "bg-muted/50 text-muted-foreground"
+                }`}
+              >
+                <FileText className="h-4 w-4" />
+                Consensi
               </Link>
               {cmsLinks.map((link) => {
                 const Icon = link.icon;

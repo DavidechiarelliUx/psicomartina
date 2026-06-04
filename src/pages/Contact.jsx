@@ -23,9 +23,29 @@ const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
 const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
 const studioMapUrl = `https://www.google.com/maps?q=${encodeURIComponent(studioAddress)}&output=embed`;
 
-export default function Contact() {
-  const [visibleMonth, setVisibleMonth] = useState(new Date());
-  const [form, setForm] = useState({
+const emptyConsent = {
+  subject_type: "adult",
+  client_full_name: "",
+  client_email: "",
+  phone: "",
+  fiscal_code: "",
+  birth_place: "",
+  birth_date: "",
+  residence_city: "",
+  residence_address: "",
+  residence_number: "",
+  service_kind: "consulenza",
+  service_other: "",
+  minor_full_name: "",
+  tutor_full_name: "",
+  second_tutor_full_name: "",
+  privacy_consent: false,
+  terms_accepted: false,
+  signed_name: "",
+};
+
+function getInitialForm() {
+  return {
     client_name: "",
     client_email: "",
     client_phone: "",
@@ -35,7 +55,13 @@ export default function Contact() {
     notes: "",
     privacy_accepted: false,
     informed_consent_accepted: false,
-  });
+    consent: { ...emptyConsent },
+  };
+}
+
+export default function Contact() {
+  const [visibleMonth, setVisibleMonth] = useState(new Date());
+  const [form, setForm] = useState(getInitialForm);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const monthKey = format(visibleMonth, "yyyy-MM");
@@ -88,7 +114,28 @@ export default function Contact() {
     }
   };
 
-  const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+  const update = (field, value) =>
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "client_name") {
+        next.consent = {
+          ...next.consent,
+          client_full_name: next.consent.client_full_name || value,
+          signed_name: next.consent.signed_name || value,
+        };
+      }
+      if (field === "client_email") {
+        next.consent = { ...next.consent, client_email: next.consent.client_email || value };
+      }
+      if (field === "client_phone") {
+        next.consent = { ...next.consent, phone: next.consent.phone || value };
+      }
+      if (field === "privacy_accepted") {
+        next.consent = { ...next.consent, privacy_consent: Boolean(value) };
+      }
+      return next;
+    });
+  const updateConsent = (field, value) => setForm((prev) => ({ ...prev, consent: { ...prev.consent, [field]: value } }));
   const selectDate = (date) => {
     const value = format(date, "yyyy-MM-dd");
     setForm((prev) => ({
@@ -184,17 +231,7 @@ export default function Contact() {
                   <Button
                     onClick={() => {
                       setSent(false);
-                      setForm({
-                        client_name: "",
-                        client_email: "",
-                        client_phone: "",
-                        date: "",
-                        time_slot: "",
-                        service_type: "",
-                        notes: "",
-                        privacy_accepted: false,
-                        informed_consent_accepted: false,
-                      });
+                      setForm(getInitialForm());
                     }}
                     variant="outline"
                     className="mt-6 rounded-full"
@@ -323,22 +360,192 @@ export default function Contact() {
                       <div>
                         <h3 className="font-heading text-lg font-semibold text-foreground">Consenso informato</h3>
                         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                          Il primo colloquio è uno spazio conoscitivo e di orientamento. La richiesta inviata tramite il sito non sostituisce una valutazione
-                          clinica, non rappresenta una presa in carico automatica e non è un servizio per emergenze. Durante il colloquio verranno chiariti
-                          obiettivi, modalità del percorso, durata indicativa, costi, riservatezza professionale e possibilità di interrompere il percorso in
-                          qualsiasi momento.
+                          Compila i dati necessari per generare il modulo di consenso informato. Il PDF sarà creato automaticamente e allegato alla richiesta
+                          nella dashboard dello studio.
                         </p>
+                      </div>
+                    </div>
+                    <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Per chi è il consenso *</Label>
+                        <Select value={form.consent.subject_type} onValueChange={(v) => updateConsent("subject_type", v)}>
+                          <SelectTrigger className="bg-background">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="adult">Adulto</SelectItem>
+                            <SelectItem value="minor">Minorenne</SelectItem>
+                            <SelectItem value="protected_person">Persona sotto tutela</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tipo prestazione *</Label>
+                        <Select value={form.consent.service_kind} onValueChange={(v) => updateConsent("service_kind", v)}>
+                          <SelectTrigger className="bg-background">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="consulenza">Consulenza</SelectItem>
+                            <SelectItem value="sostegno_psicologico">Sostegno psicologico</SelectItem>
+                            <SelectItem value="altro">Altro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {form.consent.service_kind === "altro" && (
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label htmlFor="consent-service-other">Specifica prestazione</Label>
+                          <Input
+                            id="consent-service-other"
+                            value={form.consent.service_other}
+                            onChange={(e) => updateConsent("service_other", e.target.value)}
+                            placeholder="Es. valutazione, screening, colloquio conoscitivo..."
+                            className="bg-background"
+                          />
+                        </div>
+                      )}
+                      {(form.consent.subject_type === "minor" || form.consent.subject_type === "protected_person") && (
+                        <>
+                          {form.consent.subject_type === "minor" && (
+                            <div className="space-y-2 sm:col-span-2">
+                              <Label htmlFor="minor-name">Nome e cognome del minore *</Label>
+                              <Input
+                                id="minor-name"
+                                value={form.consent.minor_full_name}
+                                onChange={(e) => updateConsent("minor_full_name", e.target.value)}
+                                placeholder="Nome e cognome"
+                                className="bg-background"
+                              />
+                            </div>
+                          )}
+                          <div className="space-y-2">
+                            <Label htmlFor="tutor-name">Genitore/Tutore *</Label>
+                            <Input
+                              id="tutor-name"
+                              value={form.consent.tutor_full_name}
+                              onChange={(e) => updateConsent("tutor_full_name", e.target.value)}
+                              placeholder="Nome e cognome"
+                              className="bg-background"
+                            />
+                          </div>
+                          {form.consent.subject_type === "minor" && (
+                            <div className="space-y-2">
+                              <Label htmlFor="second-tutor-name">Secondo genitore/tutore</Label>
+                              <Input
+                                id="second-tutor-name"
+                                value={form.consent.second_tutor_full_name}
+                                onChange={(e) => updateConsent("second_tutor_full_name", e.target.value)}
+                                placeholder="Nome e cognome"
+                                className="bg-background"
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
+                      <div className="space-y-2">
+                        <Label htmlFor="consent-name">Nome e cognome assistito/a *</Label>
+                        <Input
+                          id="consent-name"
+                          value={form.consent.client_full_name}
+                          onChange={(e) => updateConsent("client_full_name", e.target.value)}
+                          placeholder="Nome e cognome"
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="consent-email">Email *</Label>
+                        <Input
+                          id="consent-email"
+                          type="email"
+                          value={form.consent.client_email}
+                          onChange={(e) => updateConsent("client_email", e.target.value)}
+                          placeholder="email@example.com"
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="fiscal-code">Codice fiscale *</Label>
+                        <Input
+                          id="fiscal-code"
+                          value={form.consent.fiscal_code}
+                          onChange={(e) => updateConsent("fiscal_code", e.target.value.toUpperCase())}
+                          placeholder="Codice fiscale"
+                          className="bg-background uppercase"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="birth-place">Luogo di nascita *</Label>
+                        <Input
+                          id="birth-place"
+                          value={form.consent.birth_place}
+                          onChange={(e) => updateConsent("birth_place", e.target.value)}
+                          placeholder="Comune di nascita"
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="birth-date">Data di nascita *</Label>
+                        <Input
+                          id="birth-date"
+                          type="date"
+                          value={form.consent.birth_date}
+                          onChange={(e) => updateConsent("birth_date", e.target.value)}
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="residence-city">Città di residenza *</Label>
+                        <Input
+                          id="residence-city"
+                          value={form.consent.residence_city}
+                          onChange={(e) => updateConsent("residence_city", e.target.value)}
+                          placeholder="Città"
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="residence-address">Via/Piazza *</Label>
+                        <Input
+                          id="residence-address"
+                          value={form.consent.residence_address}
+                          onChange={(e) => updateConsent("residence_address", e.target.value)}
+                          placeholder="Indirizzo"
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="residence-number">Numero civico</Label>
+                        <Input
+                          id="residence-number"
+                          value={form.consent.residence_number}
+                          onChange={(e) => updateConsent("residence_number", e.target.value)}
+                          placeholder="N."
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="signed-name">Firma digitata *</Label>
+                        <Input
+                          id="signed-name"
+                          value={form.consent.signed_name}
+                          onChange={(e) => updateConsent("signed_name", e.target.value)}
+                          placeholder="Scrivi nome e cognome per confermare il consenso"
+                          className="bg-background"
+                        />
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <Checkbox
                         id="informed-consent"
                         checked={form.informed_consent_accepted}
-                        onCheckedChange={(v) => update("informed_consent_accepted", Boolean(v))}
+                        onCheckedChange={(v) => {
+                          update("informed_consent_accepted", Boolean(v));
+                          updateConsent("terms_accepted", Boolean(v));
+                        }}
                       />
                       <Label htmlFor="informed-consent" className="cursor-pointer text-xs leading-relaxed text-muted-foreground">
-                        Ho letto e compreso le informazioni preliminari sul consenso informato e chiedo di essere ricontattato/a per fissare il primo
-                        colloquio.
+                        Dichiaro di aver letto e compreso il consenso informato, accetto le condizioni della prestazione psicologica e chiedo di essere
+                        ricontattato/a per fissare il colloquio.
                       </Label>
                     </div>
                   </div>

@@ -69,6 +69,37 @@ create table if not exists appointments (
   deleted_at timestamptz
 );
 
+-- Moduli di consenso informato generati durante la prenotazione.
+-- Il PDF resta su Cloudinary; qui salviamo solo metadati, URL e public_id.
+create table if not exists informed_consents (
+  id uuid primary key default gen_random_uuid(),
+  appointment_id uuid not null unique references appointments(id) on delete cascade,
+  client_id uuid not null references clients(id),
+  subject_type text not null default 'adult',
+  client_full_name text not null,
+  client_email text not null,
+  phone text,
+  fiscal_code text,
+  birth_place text,
+  birth_date date,
+  residence_city text,
+  residence_address text,
+  residence_number text,
+  service_kind text not null default 'consulenza',
+  service_other text,
+  minor_full_name text,
+  tutor_full_name text,
+  second_tutor_full_name text,
+  privacy_consent boolean not null default true,
+  terms_accepted boolean not null default true,
+  signed_name text not null,
+  pdf_url text not null,
+  pdf_public_id text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+
 -- Orari settimanali in cui il form pubblico può proporre fasce di prenotazione.
 create table if not exists booking_schedules (
   id uuid primary key default gen_random_uuid(),
@@ -140,6 +171,11 @@ create index if not exists idx_appointments_status_date on appointments(status, 
 create index if not exists idx_appointments_service_type on appointments(service_type);
 create index if not exists idx_appointments_client_id on appointments(client_id);
 create index if not exists idx_appointments_deleted_at on appointments(deleted_at);
+create index if not exists idx_informed_consents_client_full_name on informed_consents(client_full_name);
+create index if not exists idx_informed_consents_client_email on informed_consents(client_email);
+create index if not exists idx_informed_consents_fiscal_code on informed_consents(fiscal_code);
+create index if not exists idx_informed_consents_created_at on informed_consents(created_at);
+create index if not exists idx_informed_consents_deleted_at on informed_consents(deleted_at);
 create index if not exists idx_booking_schedules_day_of_week on booking_schedules(day_of_week);
 create index if not exists idx_contact_messages_status_created on contact_messages(status, created_at);
 create index if not exists idx_contact_messages_email on contact_messages(email);
@@ -164,6 +200,8 @@ drop trigger if exists trg_services_updated_at on services;
 create trigger trg_services_updated_at before update on services for each row execute function set_updated_at();
 drop trigger if exists trg_appointments_updated_at on appointments;
 create trigger trg_appointments_updated_at before update on appointments for each row execute function set_updated_at();
+drop trigger if exists trg_informed_consents_updated_at on informed_consents;
+create trigger trg_informed_consents_updated_at before update on informed_consents for each row execute function set_updated_at();
 drop trigger if exists trg_contact_messages_updated_at on contact_messages;
 create trigger trg_contact_messages_updated_at before update on contact_messages for each row execute function set_updated_at();
 drop trigger if exists trg_testimonials_updated_at on testimonials;

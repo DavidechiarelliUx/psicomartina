@@ -1,8 +1,9 @@
 import prismaPkg from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { jsPDF } from "jspdf";
 import { loadEnv } from "./env.js";
 import { createDashboardToken, requireDashboardAuth } from "./lib/auth.js";
-import { deleteImage, extractPublicId, uploadBlog } from "./lib/cloudinary.js";
+import { deleteImage, deleteRawFile, extractPublicId, uploadBlog, uploadConsentPdf } from "./lib/cloudinary.js";
 import { sendBookingConfirmationToClient, sendBookingNotificationToStudio, sendCustomEmailToClient } from "./lib/mailer.js";
 
 loadEnv();
@@ -34,6 +35,18 @@ const serviceLabels = {
   relazioni: "Relazioni",
   autostima: "Autostima",
   traumi: "Traumi",
+};
+
+const consentSubjectLabels = {
+  adult: "Adulto",
+  minor: "Minorenne",
+  protected_person: "Persona sotto tutela",
+};
+
+const consentServiceLabels = {
+  consulenza: "Consulenza",
+  sostegno_psicologico: "Sostegno psicologico",
+  altro: "Altro",
 };
 
 const appointmentStatusToDb = {
@@ -259,6 +272,212 @@ function mapContact(message) {
   };
 }
 
+function parseDateOnly(value) {
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00.000Z`) : null;
+}
+
+function sanitizeText(value = "") {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function mapConsent(consent) {
+  return {
+    id: consent.id,
+    appointment_id: consent.appointmentId,
+    client_id: consent.clientId,
+    subject_type: consent.subjectType,
+    subject_label: consentSubjectLabels[consent.subjectType] || consent.subjectType,
+    client_name: consent.clientFullName,
+    client_email: consent.clientEmail,
+    phone: consent.phone,
+    fiscal_code: consent.fiscalCode,
+    birth_place: consent.birthPlace,
+    birth_date: consent.birthDate ? formatDate(consent.birthDate) : null,
+    residence_city: consent.residenceCity,
+    residence_address: consent.residenceAddress,
+    residence_number: consent.residenceNumber,
+    service_kind: consent.serviceKind,
+    service_label: consentServiceLabels[consent.serviceKind] || consent.serviceKind,
+    service_other: consent.serviceOther,
+    minor_full_name: consent.minorFullName,
+    tutor_full_name: consent.tutorFullName,
+    second_tutor_full_name: consent.secondTutorFullName,
+    signed_name: consent.signedName,
+    privacy_consent: consent.privacyConsent,
+    terms_accepted: consent.termsAccepted,
+    pdf_url: consent.pdfUrl,
+    pdf_public_id: consent.pdfPublicId,
+    created_at: consent.createdAt.toISOString(),
+    appointment: consent.appointment
+      ? {
+          date: formatDate(consent.appointment.scheduledDate),
+          time_slot: consent.appointment.timeSlot,
+          status: consent.appointment.status,
+          service_label: consent.appointment.service?.title || serviceLabels[consent.appointment.serviceType] || consent.appointment.serviceType,
+        }
+      : null,
+  };
+}
+
+function normalizeConsentPayload(payload, appointmentPayload) {
+  const consent = payload?.consent || {};
+  const subjectType = ["adult", "minor", "protected_person"].includes(consent.subject_type) ? consent.subject_type : "adult";
+  const normalized = {
+    subjectType,
+    clientFullName: sanitizeText(consent.client_full_name || appointmentPayload.client_name),
+    clientEmail: sanitizeText(consent.client_email || appointmentPayload.client_email).toLowerCase(),
+    phone: sanitizeText(consent.phone || appointmentPayload.client_phone) || null,
+    fiscalCode: sanitizeText(consent.fiscal_code).toUpperCase() || null,
+    birthPlace: sanitizeText(consent.birth_place) || null,
+    birthDate: parseDateOnly(consent.birth_date),
+    residenceCity: sanitizeText(consent.residence_city) || null,
+    residenceAddress: sanitizeText(consent.residence_address) || null,
+    residenceNumber: sanitizeText(consent.residence_number) || null,
+    serviceKind: ["consulenza", "sostegno_psicologico", "altro"].includes(consent.service_kind) ? consent.service_kind : "consulenza",
+    serviceOther: sanitizeText(consent.service_other) || null,
+    minorFullName: sanitizeText(consent.minor_full_name) || null,
+    tutorFullName: sanitizeText(consent.tutor_full_name) || null,
+    secondTutorFullName: sanitizeText(consent.second_tutor_full_name) || null,
+    privacyConsent: Boolean(consent.privacy_consent),
+    termsAccepted: Boolean(consent.terms_accepted),
+    signedName: sanitizeText(consent.signed_name || appointmentPayload.client_name),
+  };
+
+  if (!normalized.clientFullName || !normalized.clientEmail || !normalized.fiscalCode || !normalized.birthPlace || !normalized.birthDate) {
+    const error = new Error("Compila i dati obbligatori del consenso informato: nome, email, codice fiscale, luogo e data di nascita.");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!normalized.residenceCity || !normalized.residenceAddress) {
+    const error = new Error("Compila residenza e indirizzo nel consenso informato.");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!normalized.privacyConsent || !normalized.termsAccepted || !normalized.signedName) {
+    const error = new Error("Accetta il consenso informato e inserisci il nome per la firma.");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (subjectType === "minor" && (!normalized.minorFullName || !normalized.tutorFullName)) {
+    const error = new Error("Per un minore servono nome del minore e almeno un genitore/tutore.");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (subjectType === "protected_person" && !normalized.tutorFullName) {
+    const error = new Error("Per una persona sotto tutela serve il nome del tutore.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return normalized;
+}
+
+function addWrappedText(doc, text, x, y, maxWidth, lineHeight = 6) {
+  const lines = doc.splitTextToSize(String(text || ""), maxWidth);
+  doc.text(lines, x, y);
+  return y + lines.length * lineHeight;
+}
+
+function ensurePdfSpace(doc, y, needed = 26) {
+  if (y + needed <= 280) return y;
+  doc.addPage();
+  return 18;
+}
+
+function generateConsentPdf({ consent, appointmentPayload }) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const studioName = "Studio Psicomartina - Dott.ssa Martina Giovinazzo";
+  const address = process.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
+  const albo = process.env.VITE_STUDIO_ALBO_NUMBER || "32977";
+  const alboRegion = process.env.VITE_STUDIO_ALBO_REGION || "Lazio";
+  const email = process.env.EMAIL_STUDIO || process.env.VITE_STUDIO_EMAIL || "";
+  const phone = process.env.VITE_STUDIO_PHONE || "";
+  let y = 18;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  y = addWrappedText(doc, "Contratto e consenso informato per prestazioni di consulenza e/o sostegno psicologico", 18, y, 174, 7) + 2;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  y = addWrappedText(doc, `${studioName} - iscrizione Ordine Psicologi ${alboRegion} n. ${albo}`, 18, y, 174);
+  y = addWrappedText(doc, `Contatti: ${email}${phone ? ` - ${phone}` : ""} - Sede: ${address}`, 18, y, 174) + 4;
+
+  const rows = [
+    ["Tipologia", consentSubjectLabels[consent.subjectType] || consent.subjectType],
+    ["Assistito/a", consent.clientFullName],
+    ["Email", consent.clientEmail],
+    ["Telefono", consent.phone || "-"],
+    ["Codice fiscale", consent.fiscalCode],
+    ["Nato/a a", `${consent.birthPlace} il ${formatDate(consent.birthDate)}`],
+    ["Residenza", `${consent.residenceCity}, ${consent.residenceAddress}${consent.residenceNumber ? ` ${consent.residenceNumber}` : ""}`],
+    ["Prestazione richiesta", consent.serviceKind === "altro" ? consent.serviceOther || "Altro" : consentServiceLabels[consent.serviceKind]],
+    ["Appuntamento richiesto", `${appointmentPayload.date} alle ${appointmentPayload.time_slot}`],
+  ];
+
+  if (consent.subjectType === "minor") {
+    rows.splice(2, 0, ["Minore", consent.minorFullName || "-"], ["Genitore/Tutore", consent.tutorFullName || "-"], ["Secondo genitore/tutore", consent.secondTutorFullName || "-"]);
+  }
+  if (consent.subjectType === "protected_person") {
+    rows.splice(2, 0, ["Tutore", consent.tutorFullName || "-"]);
+  }
+
+  doc.setFontSize(11);
+  rows.forEach(([label, value]) => {
+    y = ensurePdfSpace(doc, y, 12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${label}:`, 18, y);
+    doc.setFont("helvetica", "normal");
+    y = addWrappedText(doc, value, 60, y, 130) + 2;
+  });
+
+  y += 4;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Informazioni essenziali", 18, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+
+  const paragraphs = [
+    "La prestazione psicologica richiesta potrà consistere in colloqui di consulenza, sostegno psicologico, valutazione e orientamento, secondo quanto emergerà in sede di primo colloquio.",
+    "La dott.ssa Martina Giovinazzo opera nel rispetto del Codice Deontologico degli Psicologi Italiani, del segreto professionale e della normativa vigente in materia di trattamento dei dati personali.",
+    "La durata del percorso non è quantificabile a priori e sarà concordata in base agli obiettivi, ai bisogni emersi e all'andamento del lavoro clinico.",
+    "Gli incontri hanno durata indicativa di 45 minuti. Costi, modalità di pagamento e aspetti organizzativi saranno confermati direttamente dallo studio.",
+    "Il consenso può essere revocato e il percorso può essere interrotto in qualsiasi momento, nel rispetto degli accordi presi e delle norme professionali.",
+    "I dati personali e sanitari sono trattati ai sensi del GDPR per finalità connesse alla gestione della richiesta, all'erogazione della prestazione e agli obblighi fiscali e professionali.",
+  ];
+
+  paragraphs.forEach((paragraph) => {
+    y = ensurePdfSpace(doc, y, 26);
+    y = addWrappedText(doc, paragraph, 18, y, 174) + 4;
+  });
+
+  y = ensurePdfSpace(doc, y, 48);
+  doc.setFont("helvetica", "bold");
+  doc.text("Dichiarazioni e consenso", 18, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  y = addWrappedText(
+    doc,
+    `Il/la sottoscritto/a ${consent.signedName} dichiara di aver letto, compreso e accettato le informazioni riportate nel presente consenso informato e di prestare il consenso al trattamento dei dati personali per le finalità indicate.`,
+    18,
+    y,
+    174
+  ) + 8;
+  doc.text(`Consenso privacy: ${consent.privacyConsent ? "prestato" : "non prestato"}`, 18, y);
+  y += 7;
+  doc.text(`Accettazione condizioni: ${consent.termsAccepted ? "sì" : "no"}`, 18, y);
+  y += 14;
+  doc.text(`Data invio: ${new Date().toLocaleDateString("it-IT")}`, 18, y);
+  doc.text(`Firma digitata: ${consent.signedName}`, 90, y);
+
+  doc.setFontSize(8);
+  doc.setTextColor(110, 110, 110);
+  doc.text("Documento generato automaticamente dal sito al momento della richiesta di prenotazione.", 18, 292);
+
+  return Buffer.from(doc.output("arraybuffer"));
+}
+
 function mapPost(post) {
   return {
     id: post.id,
@@ -329,10 +548,11 @@ async function getDashboard() {
 }
 
 async function createAppointment(payload) {
-  const serviceType = payload.service_type || "primo_colloquio";
+  const serviceType = serviceLabels[payload.service_type] ? payload.service_type : "primo_colloquio";
   const service = await prisma.service.findUnique({ where: { code: serviceType } });
   const email = String(payload.client_email || "").trim().toLowerCase();
   const fullName = String(payload.client_name || "").trim();
+  const consent = normalizeConsentPayload(payload, { ...payload, client_email: email, client_name: fullName });
 
   if (!fullName || !email || !payload.date || !payload.time_slot || !payload.privacy_accepted || !payload.informed_consent_accepted) {
     const error = new Error("Compila nome, email, data, orario, consenso privacy e consenso informato.");
@@ -355,48 +575,89 @@ async function createAppointment(payload) {
     throw error;
   }
 
-  const client = await prisma.client.upsert({
-    where: { email },
-    update: {
-      fullName,
-      phone: payload.client_phone || null,
-    },
-    create: {
-      fullName,
-      email,
-      phone: payload.client_phone || null,
-    },
-  });
+  const pdfBuffer = generateConsentPdf({ consent, appointmentPayload: payload });
+  const publicId = `consenso-${Date.now()}-${slugify(fullName || "cliente")}`;
+  const uploadResult = await uploadConsentPdf(pdfBuffer, publicId);
 
-  const appointment = await prisma.appointment.create({
-    data: {
-      clientId: client.id,
-      serviceId: service?.id || null,
-      serviceType,
-      scheduledDate: new Date(`${payload.date}T00:00:00.000Z`),
-      timeSlot: payload.time_slot,
-      status: "pending",
-      notes: payload.notes || null,
-      privacyAccepted: true,
-      informedConsentAccepted: true,
-      source: "website",
-    },
-    include: { client: true, service: true },
-  });
+  let appointment;
+  try {
+    appointment = await prisma.$transaction(async (tx) => {
+      const client = await tx.client.upsert({
+        where: { email },
+        update: {
+          fullName,
+          phone: payload.client_phone || null,
+        },
+        create: {
+          fullName,
+          email,
+          phone: payload.client_phone || null,
+        },
+      });
 
-  if (payload.notes) {
-    await prisma.contactMessage.create({
-      data: {
-        clientId: client.id,
-        serviceId: service?.id || null,
-        name: fullName,
-        email,
-        phone: payload.client_phone || null,
-        message: payload.notes,
-        status: "new",
-        privacyAccepted: true,
-      },
+      const createdAppointment = await tx.appointment.create({
+        data: {
+          clientId: client.id,
+          serviceId: service?.id || null,
+          serviceType,
+          scheduledDate: new Date(`${payload.date}T00:00:00.000Z`),
+          timeSlot: payload.time_slot,
+          status: "pending",
+          notes: payload.notes || null,
+          privacyAccepted: true,
+          informedConsentAccepted: true,
+          source: "website",
+        },
+        include: { client: true, service: true },
+      });
+
+      await tx.informedConsent.create({
+        data: {
+          appointmentId: createdAppointment.id,
+          clientId: client.id,
+          subjectType: consent.subjectType,
+          clientFullName: consent.clientFullName,
+          clientEmail: consent.clientEmail,
+          phone: consent.phone,
+          fiscalCode: consent.fiscalCode,
+          birthPlace: consent.birthPlace,
+          birthDate: consent.birthDate,
+          residenceCity: consent.residenceCity,
+          residenceAddress: consent.residenceAddress,
+          residenceNumber: consent.residenceNumber,
+          serviceKind: consent.serviceKind,
+          serviceOther: consent.serviceOther,
+          minorFullName: consent.minorFullName,
+          tutorFullName: consent.tutorFullName,
+          secondTutorFullName: consent.secondTutorFullName,
+          privacyConsent: consent.privacyConsent,
+          termsAccepted: consent.termsAccepted,
+          signedName: consent.signedName,
+          pdfUrl: uploadResult.secure_url,
+          pdfPublicId: uploadResult.public_id,
+        },
+      });
+
+      if (payload.notes) {
+        await tx.contactMessage.create({
+          data: {
+            clientId: client.id,
+            serviceId: service?.id || null,
+            name: fullName,
+            email,
+            phone: payload.client_phone || null,
+            message: payload.notes,
+            status: "new",
+            privacyAccepted: true,
+          },
+        });
+      }
+
+      return createdAppointment;
     });
+  } catch (error) {
+    await deleteRawFile(uploadResult.public_id);
+    throw error;
   }
 
   return mapAppointment(appointment);
@@ -518,6 +779,35 @@ async function getBookingStats(period) {
     const count = appointments.filter((appointment) => appointment.scheduledDate >= weekStart && appointment.scheduledDate < weekEnd).length;
     return { label: `Sett. ${index + 1}`, count };
   });
+}
+
+async function getInformedConsents(query = "") {
+  const q = sanitizeText(query);
+  const where = {
+    deletedAt: null,
+    ...(q
+      ? {
+          OR: [
+            { clientFullName: { contains: q, mode: "insensitive" } },
+            { clientEmail: { contains: q, mode: "insensitive" } },
+            { fiscalCode: { contains: q.toUpperCase(), mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const consents = await prisma.informedConsent.findMany({
+    where,
+    include: {
+      appointment: {
+        include: { service: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+
+  return consents.map(mapConsent);
 }
 
 async function autoCompletePastAppointments() {
@@ -770,6 +1060,11 @@ export async function handleApiRequest(req, res) {
     if (req.method === "GET" && url.pathname === "/api/dashboard") {
       if (!requireDashboardAuth(req, res, sendJson)) return;
       return sendJson(res, 200, await getDashboard());
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/consents") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      return sendJson(res, 200, { consents: await getInformedConsents(url.searchParams.get("q") || "") });
     }
 
     if (req.method === "GET" && url.pathname === "/api/booking-schedules") {

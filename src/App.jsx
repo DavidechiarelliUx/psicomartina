@@ -16,6 +16,7 @@ import Privacy from "./pages/Privacy";
 import Dashboard from "./pages/Dashboard";
 import DashboardLogin from "./pages/DashboardLogin";
 import CmsPage from "./pages/dashboard/CmsPage";
+import ConsentsPage from "./pages/dashboard/ConsentsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -37,6 +38,14 @@ const AuthenticatedApp = () => {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/consensi"
+          element={
+            <ProtectedRoute>
+              <ConsentsPage />
             </ProtectedRoute>
           }
         />

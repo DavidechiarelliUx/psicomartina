@@ -5,7 +5,7 @@ import path from "node:path";
 
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || "http://127.0.0.1:3001";
 
-const knownRoutes = new Set(["/", "/chi-sono", "/servizi", "/come-funziona", "/blog", "/contatti", "/privacy", "/dashboard"]);
+const knownRoutes = new Set(["/", "/chi-sono", "/servizi", "/come-funziona", "/blog", "/contatti", "/privacy", "/dashboard", "/dashboard/consensi"]);
 
 function isHtmlNavigation(req) {
   return req.method === "GET" && (req.headers.accept || "").includes("text/html");

@@ -43,6 +43,7 @@ model Client {
   updatedAt    DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt    DateTime?         @map("deleted_at") @db.Timestamptz(6)
   appointments Appointment[]
+  informedConsents InformedConsent[]
   messages     ContactMessage[]
 
   @@index([email])
@@ -103,6 +104,7 @@ model Appointment {
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz(6)
   client          Client            @relation(fields: [clientId], references: [id])
   service         Service?          @relation(fields: [serviceId], references: [id])
+  informedConsent InformedConsent?
 
   @@index([scheduledDate, timeSlot])
   @@index([status, scheduledDate])
@@ -110,6 +112,44 @@ model Appointment {
   @@index([clientId])
   @@index([deletedAt])
   @@map("appointments")
+}
+
+model InformedConsent {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  appointmentId    String      @unique @map("appointment_id") @db.Uuid
+  clientId         String      @map("client_id") @db.Uuid
+  subjectType      String      @default("adult") @map("subject_type")
+  clientFullName   String      @map("client_full_name")
+  clientEmail      String      @map("client_email")
+  phone            String?
+  fiscalCode       String?     @map("fiscal_code")
+  birthPlace       String?     @map("birth_place")
+  birthDate        DateTime?   @map("birth_date") @db.Date
+  residenceCity    String?     @map("residence_city")
+  residenceAddress String?     @map("residence_address")
+  residenceNumber  String?     @map("residence_number")
+  serviceKind      String      @default("consulenza") @map("service_kind")
+  serviceOther     String?     @map("service_other")
+  minorFullName    String?     @map("minor_full_name")
+  tutorFullName    String?     @map("tutor_full_name")
+  secondTutorFullName String?  @map("second_tutor_full_name")
+  privacyConsent   Boolean     @default(true) @map("privacy_consent")
+  termsAccepted    Boolean     @default(true) @map("terms_accepted")
+  signedName       String      @map("signed_name")
+  pdfUrl           String      @map("pdf_url")
+  pdfPublicId      String      @map("pdf_public_id")
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?   @map("deleted_at") @db.Timestamptz(6)
+  appointment      Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  client           Client      @relation(fields: [clientId], references: [id])
+
+  @@index([clientFullName])
+  @@index([clientEmail])
+  @@index([fiscalCode])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("informed_consents")
 }
 
 model BookingSchedule {
