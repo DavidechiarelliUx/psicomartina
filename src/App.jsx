@@ -20,6 +20,7 @@ import CmsPage from "./pages/dashboard/CmsPage";
 import ConsentsPage from "./pages/dashboard/ConsentsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const AuthenticatedApp = () => {
   return (
@@ -89,6 +90,7 @@ function App() {
       </Router>
       <Toaster />
       <SonnerToaster position="top-center" />
+      <SpeedInsights />
     </QueryClientProvider>
   );
 }
