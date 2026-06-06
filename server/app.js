@@ -1,12 +1,18 @@
 import prismaPkg from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { jsPDF } from "jspdf";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { loadEnv } from "./env.js";
 import { createDashboardToken, requireDashboardAuth } from "./lib/auth.js";
 import { deleteImage, deleteRawFile, extractPublicId, uploadBlog, uploadConsentPdf } from "./lib/cloudinary.js";
 import { sendAppointmentConfirmedToClient, sendBookingNotificationToStudio, sendBookingRequestReceivedToClient, sendCustomEmailToClient, sendReviewRequestToClient } from "./lib/mailer.js";
 
 loadEnv();
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const CONSENT_TEMPLATE_PATH = join(__dirname, "assets", "modulo-consenso-informato.pdf");
 
 const { PrismaClient } = prismaPkg;
 const databaseUrl = process.env.DATABASE_URL;
@@ -308,6 +314,11 @@ function mapConsent(consent) {
     minor_full_name: consent.minorFullName,
     tutor_full_name: consent.tutorFullName,
     second_tutor_full_name: consent.secondTutorFullName,
+    compensation_amount: consent.compensationAmount,
+    tax_regime: consent.taxRegime,
+    payment_method: consent.paymentMethod,
+    signature_box: consent.signatureBox,
+    personal_data_consent_choice: consent.personalDataConsentChoice,
     signed_name: consent.signedName,
     privacy_consent: consent.privacyConsent,
     terms_accepted: consent.termsAccepted,
@@ -344,6 +355,11 @@ function normalizeConsentPayload(payload, appointmentPayload) {
     minorFullName: sanitizeText(consent.minor_full_name) || null,
     tutorFullName: sanitizeText(consent.tutor_full_name) || null,
     secondTutorFullName: sanitizeText(consent.second_tutor_full_name) || null,
+    compensationAmount: sanitizeText(consent.compensation_amount || "45") || "45",
+    taxRegime: sanitizeText(consent.tax_regime || "Operazione esente IVA ex art.10, comma 1, n.18 del D.P.R. n.633/1972") || null,
+    paymentMethod: sanitizeText(consent.payment_method || "Bonifico bancario, carta/bancomat o altro metodo tracciabile concordato con lo studio.") || null,
+    signatureBox: ["adult", "minor", "protected_person"].includes(consent.signature_box) ? consent.signature_box : subjectType,
+    personalDataConsentChoice: consent.personal_data_consent_choice === "denied" ? "denied" : "granted",
     privacyConsent: Boolean(consent.privacy_consent),
     termsAccepted: Boolean(consent.terms_accepted),
     signedName: sanitizeText(consent.signed_name || appointmentPayload.client_name),
@@ -364,8 +380,8 @@ function normalizeConsentPayload(payload, appointmentPayload) {
     error.statusCode = 400;
     throw error;
   }
-  if (subjectType === "minor" && (!normalized.minorFullName || !normalized.tutorFullName)) {
-    const error = new Error("Per un minore servono nome del minore e almeno un genitore/tutore.");
+  if (subjectType === "minor" && (!normalized.minorFullName || !normalized.tutorFullName || !normalized.secondTutorFullName)) {
+    const error = new Error("Per un minore servono nome del minore, genitore/tutore e secondo genitore/tutore.");
     error.statusCode = 400;
     throw error;
   }
@@ -401,94 +417,121 @@ function ensurePdfSpace(doc, y, needed = 26) {
   return 18;
 }
 
-function generateConsentPdf({ consent, appointmentPayload }) {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const studioName = "Studio Psicomartina - Dott.ssa Martina Giovinazzo";
-  const address = process.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
-  const albo = process.env.VITE_STUDIO_ALBO_NUMBER || "32977";
-  const alboRegion = process.env.VITE_STUDIO_ALBO_REGION || "Lazio";
-  const email = process.env.EMAIL_STUDIO || process.env.VITE_STUDIO_EMAIL || "";
-  const phone = process.env.VITE_STUDIO_PHONE || "";
-  let y = 18;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  y = addWrappedText(doc, "Contratto e consenso informato per prestazioni di consulenza e/o sostegno psicologico", 18, y, 174, 7) + 2;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  y = addWrappedText(doc, `${studioName} - iscrizione Ordine Psicologi ${alboRegion} n. ${albo}`, 18, y, 174);
-  y = addWrappedText(doc, `Contatti: ${email}${phone ? ` - ${phone}` : ""} - Sede: ${address}`, 18, y, 174) + 4;
-
-  const rows = [
-    ["Tipologia", consentSubjectLabels[consent.subjectType] || consent.subjectType],
-    ["Assistito/a", consent.clientFullName],
-    ["Email", consent.clientEmail],
-    ["Telefono", consent.phone || "-"],
-    ["Codice fiscale", consent.fiscalCode],
-    ["Nato/a a", `${consent.birthPlace} il ${formatDate(consent.birthDate)}`],
-    ["Residenza", `${consent.residenceCity}, ${consent.residenceAddress}${consent.residenceNumber ? ` ${consent.residenceNumber}` : ""}`],
-    ["Prestazione richiesta", consent.serviceKind === "altro" ? consent.serviceOther || "Altro" : consentServiceLabels[consent.serviceKind]],
-    ["Appuntamento richiesto", `${appointmentPayload.date} alle ${appointmentPayload.time_slot}`],
-  ];
+async function generateConsentPdf({ consent, appointmentPayload }) {
+  const templateBytes = readFileSync(CONSENT_TEMPLATE_PATH);
+  const pdfDoc = await PDFDocument.load(templateBytes);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const pages = pdfDoc.getPages();
+  const textColor = rgb(0.08, 0.12, 0.12);
+  const accentColor = rgb(0.18, 0.38, 0.38);
+  const write = (pageIndex, text, x, yFromTop, options = {}) => {
+    if (!text) return;
+    const page = pages[pageIndex];
+    const height = page.getHeight();
+    page.drawText(String(text).slice(0, options.maxChars || 90), {
+      x,
+      y: height - yFromTop,
+      size: options.size || 9,
+      font: options.bold ? boldFont : font,
+      color: options.color || textColor,
+    });
+  };
+  const check = (pageIndex, x, yFromTop) => write(pageIndex, "X", x, yFromTop, { size: 11, bold: true, color: accentColor });
+  const dateText = (value) => (value ? formatDate(value) : "");
+  const residence = `${consent.residenceCity || ""}${consent.residenceAddress ? `, ${consent.residenceAddress}` : ""}`;
+  const appointmentText = appointmentPayload?.date && appointmentPayload?.time_slot ? `${appointmentPayload.date} ore ${appointmentPayload.time_slot}` : "";
+  const studioAddress = process.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
+  const paymentText = consent.paymentMethod || "Metodo tracciabile concordato con lo studio";
+  const serviceText = consent.serviceKind === "altro" ? consent.serviceOther || "Altro" : consentServiceLabels[consent.serviceKind] || "Consulenza";
 
   if (consent.subjectType === "minor") {
-    rows.splice(2, 0, ["Minore", consent.minorFullName || "-"], ["Genitore/Tutore", consent.tutorFullName || "-"], ["Secondo genitore/tutore", consent.secondTutorFullName || "-"]);
+    check(0, 31, 253);
+    write(0, consent.minorFullName, 105, 258, { maxChars: 54 });
+    write(0, consent.birthPlace, 115, 284, { maxChars: 45 });
+    write(0, dateText(consent.birthDate), 75, 301, { maxChars: 12 });
+    write(0, consent.fiscalCode, 162, 303, { maxChars: 24 });
+    write(0, consent.residenceCity, 94, 320, { maxChars: 42 });
+    write(0, consent.residenceAddress, 97, 338, { maxChars: 55 });
+    write(0, consent.residenceNumber, 516, 338, { maxChars: 8 });
+  } else if (consent.subjectType === "protected_person") {
+    check(0, 31, 351);
+    write(0, consent.clientFullName, 96, 357, { maxChars: 54 });
+    write(0, consent.birthPlace, 115, 383, { maxChars: 45 });
+    write(0, dateText(consent.birthDate), 75, 400, { maxChars: 12 });
+    write(0, consent.fiscalCode, 162, 402, { maxChars: 24 });
+    write(0, consent.residenceCity, 94, 419, { maxChars: 42 });
+    write(0, consent.residenceAddress, 97, 437, { maxChars: 55 });
+    write(0, consent.residenceNumber, 516, 437, { maxChars: 8 });
+  } else {
+    check(0, 31, 158);
+    write(0, consent.clientFullName, 101, 164, { maxChars: 54 });
+    write(0, consent.birthPlace, 115, 190, { maxChars: 45 });
+    write(0, dateText(consent.birthDate), 75, 207, { maxChars: 12 });
+    write(0, consent.fiscalCode, 162, 209, { maxChars: 24 });
+    write(0, consent.residenceCity, 94, 226, { maxChars: 42 });
+    write(0, consent.residenceAddress, 97, 244, { maxChars: 55 });
+    write(0, consent.residenceNumber, 516, 244, { maxChars: 8 });
   }
-  if (consent.subjectType === "protected_person") {
-    rows.splice(2, 0, ["Tutore", consent.tutorFullName || "-"]);
+
+  if (consent.serviceKind === "consulenza") check(0, 91, 489);
+  if (consent.serviceKind === "sostegno_psicologico") check(0, 159, 489);
+  if (consent.serviceKind === "altro") {
+    check(0, 260, 489);
+    write(0, serviceText, 304, 489, { maxChars: 70 });
   }
 
-  doc.setFontSize(11);
-  rows.forEach(([label, value]) => {
-    y = addKeyValueRow(doc, label, value, y);
-  });
+  write(1, studioAddress, 110, 41, { maxChars: 80 });
+  write(1, consent.compensationAmount || "45", 89, 223, { maxChars: 10, bold: true });
+  write(1, consent.taxRegime, 184, 245, { maxChars: 78 });
+  write(1, paymentText, 139, 282, { maxChars: 85 });
+  write(1, appointmentText, 139, 299, { maxChars: 70 });
 
-  y += 4;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text("Informazioni essenziali", 18, y);
-  y += 8;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  write(4, new Date().toLocaleDateString("it-IT"), 345, 785, { maxChars: 12 });
+  write(5, "Firma da apporre a cura della professionista", 136, 33, { size: 8, maxChars: 64 });
 
-  const paragraphs = [
-    "La prestazione psicologica richiesta potrà consistere in colloqui di consulenza, sostegno psicologico, valutazione e orientamento, secondo quanto emergerà in sede di primo colloquio.",
-    "La dott.ssa Martina Giovinazzo opera nel rispetto del Codice Deontologico degli Psicologi Italiani, del segreto professionale e della normativa vigente in materia di trattamento dei dati personali.",
-    "La durata del percorso non è quantificabile a priori e sarà concordata in base agli obiettivi, ai bisogni emersi e all'andamento del lavoro clinico.",
-    "Gli incontri hanno durata indicativa di 45 minuti. Costi, modalità di pagamento e aspetti organizzativi saranno confermati direttamente dallo studio.",
-    "Il consenso può essere revocato e il percorso può essere interrotto in qualsiasi momento, nel rispetto degli accordi presi e delle norme professionali.",
-    "I dati personali e sanitari sono trattati ai sensi del GDPR per finalità connesse alla gestione della richiesta, all'erogazione della prestazione e agli obblighi fiscali e professionali.",
-  ];
+  const finalBox = consent.signatureBox || consent.subjectType;
+  const consentGranted = consent.personalDataConsentChoice !== "denied";
+  if (finalBox === "minor") {
+    write(5, consent.tutorFullName, 87, 296, { maxChars: 76 });
+    write(5, consent.minorFullName, 166, 314, { maxChars: 54 });
+    write(5, consent.birthPlace, 96, 333, { maxChars: 44 });
+    write(5, dateText(consent.birthDate), 73, 351, { maxChars: 12 });
+    write(5, consent.residenceCity, 93, 370, { maxChars: 44 });
+    write(5, consent.residenceAddress, 97, 389, { maxChars: 58 });
+    write(5, consent.residenceNumber, 516, 389, { maxChars: 8 });
+    check(5, consentGranted ? 96 : 255, 495);
+    write(5, new Date().toLocaleDateString("it-IT"), 63, 558, { maxChars: 12 });
+    write(5, consent.tutorFullName, 390, 558, { maxChars: 34 });
+    write(5, consent.secondTutorFullName, 85, 605, { maxChars: 76 });
+    write(5, consent.minorFullName, 179, 623, { maxChars: 54 });
+    write(5, consent.birthPlace, 96, 642, { maxChars: 44 });
+    write(5, dateText(consent.birthDate), 73, 660, { maxChars: 12 });
+    write(6, consent.residenceCity, 93, 30, { maxChars: 44 });
+    write(6, consent.residenceAddress, 100, 48, { maxChars: 58 });
+    write(6, consent.residenceNumber, 516, 48, { maxChars: 8 });
+    check(6, consentGranted ? 96 : 255, 153);
+    write(6, new Date().toLocaleDateString("it-IT"), 63, 216, { maxChars: 12 });
+    write(6, consent.secondTutorFullName, 390, 216, { maxChars: 34 });
+  } else if (finalBox === "protected_person") {
+    write(6, consent.tutorFullName || consent.signedName, 107, 279, { maxChars: 70 });
+    write(6, consent.birthPlace, 93, 298, { maxChars: 44 });
+    write(6, dateText(consent.birthDate), 349, 298, { maxChars: 12 });
+    write(6, consent.clientFullName, 166, 317, { maxChars: 55 });
+    write(6, residence, 93, 373, { maxChars: 64 });
+    write(6, consent.residenceNumber, 516, 391, { maxChars: 8 });
+    check(6, consentGranted ? 96 : 255, 491);
+    write(6, new Date().toLocaleDateString("it-IT"), 63, 554, { maxChars: 12 });
+    write(6, consent.tutorFullName || consent.signedName, 390, 554, { maxChars: 34 });
+  } else {
+    write(5, consent.signedName || consent.clientFullName, 103, 98, { maxChars: 68 });
+    check(5, consentGranted ? 96 : 255, 189);
+    write(5, new Date().toLocaleDateString("it-IT"), 63, 253, { maxChars: 12 });
+    write(5, consent.signedName || consent.clientFullName, 390, 253, { maxChars: 34 });
+  }
 
-  paragraphs.forEach((paragraph) => {
-    y = ensurePdfSpace(doc, y, 26);
-    y = addWrappedText(doc, paragraph, 18, y, 174) + 4;
-  });
-
-  y = ensurePdfSpace(doc, y, 48);
-  doc.setFont("helvetica", "bold");
-  doc.text("Dichiarazioni e consenso", 18, y);
-  y += 8;
-  doc.setFont("helvetica", "normal");
-  y = addWrappedText(
-    doc,
-    `Il/la sottoscritto/a ${consent.signedName} dichiara di aver letto, compreso e accettato le informazioni riportate nel presente consenso informato e di prestare il consenso al trattamento dei dati personali per le finalità indicate.`,
-    18,
-    y,
-    174
-  ) + 8;
-  doc.text(`Consenso privacy: ${consent.privacyConsent ? "prestato" : "non prestato"}`, 18, y);
-  y += 7;
-  doc.text(`Accettazione condizioni: ${consent.termsAccepted ? "sì" : "no"}`, 18, y);
-  y += 14;
-  doc.text(`Data invio: ${new Date().toLocaleDateString("it-IT")}`, 18, y);
-  doc.text(`Firma digitata: ${consent.signedName}`, 90, y);
-
-  doc.setFontSize(8);
-  doc.setTextColor(110, 110, 110);
-  doc.text("Documento generato automaticamente dal sito al momento della richiesta di prenotazione.", 18, 292);
-
-  return Buffer.from(doc.output("arraybuffer"));
+  const bytes = await pdfDoc.save();
+  return Buffer.from(bytes);
 }
 
 function mapPost(post) {
@@ -588,7 +631,7 @@ async function createAppointment(payload) {
     throw error;
   }
 
-  const pdfBuffer = generateConsentPdf({ consent, appointmentPayload: payload });
+  const pdfBuffer = await generateConsentPdf({ consent, appointmentPayload: payload });
   const publicId = `consenso-${Date.now()}-${slugify(fullName || "cliente")}`;
   const uploadResult = await uploadConsentPdf(pdfBuffer, publicId);
 
@@ -643,6 +686,11 @@ async function createAppointment(payload) {
           minorFullName: consent.minorFullName,
           tutorFullName: consent.tutorFullName,
           secondTutorFullName: consent.secondTutorFullName,
+          compensationAmount: consent.compensationAmount,
+          taxRegime: consent.taxRegime,
+          paymentMethod: consent.paymentMethod,
+          signatureBox: consent.signatureBox,
+          personalDataConsentChoice: consent.personalDataConsentChoice,
           privacyConsent: consent.privacyConsent,
           termsAccepted: consent.termsAccepted,
           signedName: consent.signedName,
@@ -841,7 +889,7 @@ async function sendGeneratedConsentPdf(res, consentId) {
     return sendJson(res, 404, { error: "Consenso informato non trovato." });
   }
 
-  const pdfBuffer = generateConsentPdf({
+  const pdfBuffer = await generateConsentPdf({
     consent: {
       subjectType: record.subjectType,
       clientFullName: record.clientFullName,
@@ -858,6 +906,11 @@ async function sendGeneratedConsentPdf(res, consentId) {
       minorFullName: record.minorFullName,
       tutorFullName: record.tutorFullName,
       secondTutorFullName: record.secondTutorFullName,
+      compensationAmount: record.compensationAmount,
+      taxRegime: record.taxRegime,
+      paymentMethod: record.paymentMethod,
+      signatureBox: record.signatureBox,
+      personalDataConsentChoice: record.personalDataConsentChoice,
       privacyConsent: record.privacyConsent,
       termsAccepted: record.termsAccepted,
       signedName: record.signedName,
@@ -872,6 +925,20 @@ async function sendGeneratedConsentPdf(res, consentId) {
   res.writeHead(200, {
     "Content-Type": "application/pdf",
     "Content-Disposition": `attachment; filename="${filename}"`,
+    "Cache-Control": "private, max-age=0, no-store",
+  });
+  res.end(pdfBuffer);
+}
+
+async function sendPreviewConsentPdf(res, payload) {
+  const email = String(payload.client_email || "").trim().toLowerCase();
+  const fullName = String(payload.client_name || "").trim();
+  const consent = normalizeConsentPayload(payload, { ...payload, client_email: email, client_name: fullName });
+  const pdfBuffer = await generateConsentPdf({ consent, appointmentPayload: payload });
+  const filename = `anteprima-consenso-${slugify(fullName || consent.clientFullName || "cliente")}.pdf`;
+  res.writeHead(200, {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `inline; filename="${filename}"`,
     "Cache-Control": "private, max-age=0, no-store",
   });
   res.end(pdfBuffer);
@@ -1280,6 +1347,10 @@ export async function handleApiRequest(req, res) {
       const downloadId = url.searchParams.get("download");
       if (downloadId) return sendGeneratedConsentPdf(res, downloadId);
       return sendJson(res, 200, { consents: await getInformedConsents(url.searchParams.get("q") || "") });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/consents/preview") {
+      return sendPreviewConsentPdf(res, await readJson(req));
     }
 
     if (req.method === "GET" && url.pathname === "/api/booking-schedules") {

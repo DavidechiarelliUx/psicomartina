@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
-import { Mail, Phone, MapPin, Clock, CheckCircle2, FileText, Send } from "lucide-react";
+import { Download, Mail, Phone, MapPin, Clock, CheckCircle2, FileText, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -39,6 +39,11 @@ const emptyConsent = {
   minor_full_name: "",
   tutor_full_name: "",
   second_tutor_full_name: "",
+  compensation_amount: "45",
+  tax_regime: "Operazione esente IVA ex art.10, comma 1, n.18 del D.P.R. n.633/1972",
+  payment_method: "Bonifico bancario, carta/bancomat o altro metodo tracciabile concordato con lo studio.",
+  signature_box: "adult",
+  personal_data_consent_choice: "granted",
   privacy_consent: false,
   terms_accepted: false,
   signed_name: "",
@@ -63,6 +68,7 @@ export default function Contact() {
   const [visibleMonth, setVisibleMonth] = useState(new Date());
   const [form, setForm] = useState(getInitialForm);
   const [sending, setSending] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const monthKey = format(visibleMonth, "yyyy-MM");
   const { data: availability, isFetching: availabilityLoading } = useQuery({
@@ -114,6 +120,29 @@ export default function Contact() {
     }
   };
 
+  const openConsentPreview = async () => {
+    setPreviewLoading(true);
+    try {
+      const response = await fetch("/api/consents/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Non riesco a generare l'anteprima del consenso.");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const update = (field, value) =>
     setForm((prev) => {
       const next = { ...prev, [field]: value };
@@ -139,7 +168,14 @@ export default function Contact() {
       }
       return next;
     });
-  const updateConsent = (field, value) => setForm((prev) => ({ ...prev, consent: { ...prev.consent, [field]: value } }));
+  const updateConsent = (field, value) =>
+    setForm((prev) => {
+      const consent = { ...prev.consent, [field]: value };
+      if (field === "subject_type") {
+        consent.signature_box = value;
+      }
+      return { ...prev, consent };
+    });
   const selectDate = (date) => {
     const value = format(date, "yyyy-MM-dd");
     setForm((prev) => ({
@@ -162,7 +198,7 @@ export default function Contact() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
             {/* Contact Info */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="order-2 space-y-6 lg:order-1 lg:col-span-1">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-primary/5 rounded-2xl p-6 md:p-8">
                 <h3 className="font-heading text-lg font-semibold text-foreground mb-6">Informazioni</h3>
                 <div className="space-y-5">
@@ -224,7 +260,7 @@ export default function Contact() {
             </div>
 
             {/* Form */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="lg:col-span-2">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="order-1 lg:order-2 lg:col-span-2">
               {sent ? (
                 <div className="bg-card border border-border rounded-2xl p-8 md:p-12 text-center">
                   <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-6" />
@@ -432,11 +468,12 @@ export default function Contact() {
                               className="bg-background"
                             />
                           </div>
-                          {form.consent.subject_type === "minor" && (
+                      {form.consent.subject_type === "minor" && (
                             <div className="space-y-2">
-                              <Label htmlFor="second-tutor-name">Secondo genitore/tutore</Label>
+                              <Label htmlFor="second-tutor-name">Secondo genitore/tutore *</Label>
                               <Input
                                 id="second-tutor-name"
+                                required
                                 value={form.consent.second_tutor_full_name}
                                 onChange={(e) => updateConsent("second_tutor_full_name", e.target.value)}
                                 placeholder="Nome e cognome"
@@ -538,6 +575,61 @@ export default function Contact() {
                         />
                       </div>
                       <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="payment-method">Modalità di pagamento *</Label>
+                        <Textarea
+                          id="payment-method"
+                          value={form.consent.payment_method}
+                          onChange={(e) => updateConsent("payment_method", e.target.value)}
+                          placeholder="Es. bonifico bancario, carta/bancomat, altro metodo tracciabile..."
+                          rows={3}
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="compensation-amount">Compenso per incontro *</Label>
+                        <Input
+                          id="compensation-amount"
+                          value={form.consent.compensation_amount}
+                          onChange={(e) => updateConsent("compensation_amount", e.target.value)}
+                          placeholder="45"
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Riquadro sottoscrizione *</Label>
+                        <Select value={form.consent.signature_box} onValueChange={(v) => updateConsent("signature_box", v)}>
+                          <SelectTrigger className="bg-background">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="adult">Adulti</SelectItem>
+                            <SelectItem value="minor">Minorenni</SelectItem>
+                            <SelectItem value="protected_person">Persone sotto tutela</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="tax-regime">Regime fiscale / note sul compenso</Label>
+                        <Input
+                          id="tax-regime"
+                          value={form.consent.tax_regime}
+                          onChange={(e) => updateConsent("tax_regime", e.target.value)}
+                          className="bg-background"
+                        />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label>Consenso trattamento dati personali *</Label>
+                        <Select value={form.consent.personal_data_consent_choice} onValueChange={(v) => updateConsent("personal_data_consent_choice", v)}>
+                          <SelectTrigger className="bg-background">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="granted">Fornisce il consenso</SelectItem>
+                            <SelectItem value="denied">Non fornisce il consenso</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="signed-name">Firma digitata *</Label>
                         <Input
                           id="signed-name"
@@ -547,6 +639,22 @@ export default function Contact() {
                           className="bg-background"
                         />
                       </div>
+                    </div>
+                    <div className="mt-5 rounded-xl border border-border bg-background/70 p-4">
+                      <p className="text-sm font-medium text-foreground">Controlla il modulo prima dell'invio</p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        Apri il PDF precompilato. Se vuoi cambiare qualcosa, modifica i campi e rigenera il PDF prima di inviare la richiesta.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={previewLoading}
+                        onClick={openConsentPreview}
+                        className="mt-3 gap-2 rounded-full"
+                      >
+                        <Download className="h-4 w-4" />
+                        {previewLoading ? "Genero PDF..." : "Apri PDF consenso"}
+                      </Button>
                     </div>
                     <div className="flex items-start gap-3">
                       <Checkbox

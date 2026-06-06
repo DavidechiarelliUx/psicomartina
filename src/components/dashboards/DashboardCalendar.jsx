@@ -254,26 +254,28 @@ export default function DashboardCalendar({ appointments }) {
               {selectedAppts
                 .sort((a, b) => a.time_slot?.localeCompare(b.time_slot))
                 .map((a) => (
-                  <button
+                  <article
                     key={a.id}
-                    type="button"
-                    onClick={() => setSelectedCliente(a)}
-                    className="flex w-full items-start justify-between gap-4 rounded-xl bg-muted/50 p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="grid w-full gap-4 rounded-xl bg-muted/50 p-4 text-left transition-colors hover:bg-muted sm:grid-cols-[minmax(0,1fr)_190px]"
                   >
-                    <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCliente(a)}
+                      className="flex min-w-0 items-start gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
                       <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${STATUS_DOT[a.status] || "bg-muted-foreground"}`} />
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground">{a.client_name}</p>
-                        <p className="text-xs text-muted-foreground">{a.client_email}</p>
+                        <p className="break-words text-xs text-muted-foreground">{a.client_email}</p>
                         {a.client_phone && <p className="text-xs text-muted-foreground">{a.client_phone}</p>}
                         {a.service_type && <p className="text-xs text-primary mt-1">{SERVICE_LABELS[a.service_type] || a.service_type}</p>}
-                        {a.notes && <p className="text-xs text-muted-foreground mt-1 italic">"{a.notes}"</p>}
+                        {a.notes && <p className="mt-1 break-words text-xs italic text-muted-foreground">"{a.notes}"</p>}
                       </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
+                    </button>
+                    <div className="flex w-full flex-col items-stretch gap-2 sm:items-end sm:text-right">
                       <p className="text-sm font-semibold text-foreground">{a.time_slot}</p>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium mt-1 inline-block ${
+                        className={`inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-medium ${
                           STATUS_META[a.status]?.className || "bg-muted text-muted-foreground"
                         }`}
                       >
@@ -291,9 +293,8 @@ export default function DashboardCalendar({ appointments }) {
                       )}
                       <select
                         value={a.status}
-                        onClick={(event) => event.stopPropagation()}
                         onChange={(event) => updateStatus(a, event.target.value)}
-                        className="mt-2 w-full rounded-lg border border-border bg-background px-2 py-1 text-xs"
+                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm sm:h-9 sm:w-[190px] sm:text-xs"
                       >
                         <option value="pending">In attesa</option>
                         <option value="confirmed">Confermata</option>
@@ -304,10 +305,9 @@ export default function DashboardCalendar({ appointments }) {
                         <button
                           type="button"
                           onClick={(event) => {
-                            event.stopPropagation();
                             sendConfirmation(a);
                           }}
-                          className="mt-2 w-full rounded-lg border border-primary/30 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/5"
+                          className="h-10 w-full rounded-lg border border-primary/30 px-3 text-sm font-medium text-primary hover:bg-primary/5 sm:h-9 sm:w-[190px] sm:text-xs"
                         >
                           {a.confirmation_email_sent ? "Reinvia conferma" : "Invia conferma"}
                         </button>
@@ -316,16 +316,15 @@ export default function DashboardCalendar({ appointments }) {
                         <button
                           type="button"
                           onClick={(event) => {
-                            event.stopPropagation();
                             sendReviewRequest(a);
                           }}
-                          className="mt-2 w-full rounded-lg border border-accent/50 px-2 py-1 text-xs font-medium text-foreground hover:bg-accent/10"
+                          className="h-10 w-full rounded-lg border border-accent/50 px-3 text-sm font-medium text-foreground hover:bg-accent/10 sm:h-9 sm:w-[190px] sm:text-xs"
                         >
                           {a.review_request_sent ? "Reinvia recensione" : "Invia recensione"}
                         </button>
                       )}
                     </div>
-                  </button>
+                  </article>
                 ))}
             </div>
           )}
