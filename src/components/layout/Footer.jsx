@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Heart, Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 export default function Footer() {
   const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
@@ -16,7 +16,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-5 h-5 text-secondary" strokeWidth={2.5} />
+              <img src="/images/logo_bianco_senza_sfondo.png" alt="Logo Dott.ssa Martina Giovinazzo" className="w-8 h-8" />
               <span className="font-heading text-xl font-semibold text-background">Dott.ssa Giovinazzo</span>
             </div>
             <p className="text-background/60 text-sm leading-relaxed max-w-xs">

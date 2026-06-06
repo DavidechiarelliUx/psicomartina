@@ -7,7 +7,7 @@ import { Calendar, GraduationCap, Heart, Shield, Lightbulb } from "lucide-react"
 import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
 
-const ABOUT_IMG = "/images/hero-portrait.png";
+const ABOUT_IMG = "/images/dott4-3.png";
 const OFFICE_IMG = "/images/studio.png";
 const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "12345";
 

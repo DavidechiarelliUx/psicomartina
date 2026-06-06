@@ -20,6 +20,7 @@ import CmsPage from "./pages/dashboard/CmsPage";
 import ConsentsPage from "./pages/dashboard/ConsentsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const AuthenticatedApp = () => {
@@ -86,6 +87,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClientInstance}>
       <Router>
+        <ScrollToTop />
         <AuthenticatedApp />
       </Router>
       <Toaster />

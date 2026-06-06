@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Heart } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -34,7 +34,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-5 md:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="flex items-center gap-2 group">
-            <Heart className="w-5 h-5 text-accent group-hover:scale-110 transition-transform" strokeWidth={2.5} />
+            <img src="/icona_dott.png" alt="Logo Dott.ssa Martina Giovinazzo" className="h-8 w-auto max-w-14 object-contain" />
             <span className="font-heading text-xl font-semibold text-foreground tracking-tight">Dott.ssa Giovinazzo</span>
           </Link>
 
