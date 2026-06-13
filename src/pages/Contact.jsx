@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Download, Mail, Phone, MapPin, Clock, CheckCircle2, FileText, Send } from "lucide-react";
@@ -41,7 +42,7 @@ const emptyConsent = {
   second_tutor_full_name: "",
   compensation_amount: "45",
   tax_regime: "Operazione esente IVA ex art.10, comma 1, n.18 del D.P.R. n.633/1972",
-  payment_method: "Bonifico bancario, carta/bancomat o altro metodo tracciabile concordato con lo studio.",
+  payment_method: "Bonifico bancario",
   signature_box: "adult",
   personal_data_consent_choice: "granted",
   privacy_consent: false,
@@ -69,6 +70,7 @@ export default function Contact() {
   const [form, setForm] = useState(getInitialForm);
   const [sending, setSending] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [sent, setSent] = useState(false);
   const monthKey = format(visibleMonth, "yyyy-MM");
   const { data: availability, isFetching: availabilityLoading } = useQuery({
@@ -134,13 +136,22 @@ export default function Contact() {
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      window.open(url, "_blank", "noopener,noreferrer");
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
     } catch (error) {
       toast.error(error.message);
     } finally {
       setPreviewLoading(false);
     }
+  };
+
+  const closePreview = () => {
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
   };
 
   const update = (field, value) =>
@@ -459,7 +470,9 @@ export default function Contact() {
                             </div>
                           )}
                           <div className="space-y-2">
-                            <Label htmlFor="tutor-name">Genitore/Tutore *</Label>
+                            <Label htmlFor="tutor-name">
+                              {form.consent.subject_type === "minor" ? "Madre (o esercente la responsabilità genitoriale) *" : "Tutore *"}
+                            </Label>
                             <Input
                               id="tutor-name"
                               value={form.consent.tutor_full_name}
@@ -470,7 +483,7 @@ export default function Contact() {
                           </div>
                       {form.consent.subject_type === "minor" && (
                             <div className="space-y-2">
-                              <Label htmlFor="second-tutor-name">Secondo genitore/tutore *</Label>
+                              <Label htmlFor="second-tutor-name">Padre (o esercente la responsabilità genitoriale) *</Label>
                               <Input
                                 id="second-tutor-name"
                                 required
@@ -575,15 +588,20 @@ export default function Contact() {
                         />
                       </div>
                       <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="payment-method">Modalità di pagamento *</Label>
-                        <Textarea
-                          id="payment-method"
-                          value={form.consent.payment_method}
-                          onChange={(e) => updateConsent("payment_method", e.target.value)}
-                          placeholder="Es. bonifico bancario, carta/bancomat, altro metodo tracciabile..."
-                          rows={3}
-                          className="bg-background"
-                        />
+                        <Label>Modalità di pagamento *</Label>
+                        <Select value={form.consent.payment_method} onValueChange={(v) => updateConsent("payment_method", v)}>
+                          <SelectTrigger className="bg-background">
+                            <SelectValue placeholder="Seleziona la modalità" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Bonifico bancario">Bonifico bancario</SelectItem>
+                            <SelectItem value="Carta di credito/Bancomat">Carta di credito/Bancomat</SelectItem>
+                            <SelectItem value="Assegno">Assegno</SelectItem>
+                            <SelectItem value="Bonifico bancario, carta/bancomat o altro metodo tracciabile concordato con lo studio.">
+                              Altro metodo tracciabile concordato con lo studio
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="compensation-amount">Compenso per incontro *</Label>
@@ -656,6 +674,20 @@ export default function Contact() {
                         {previewLoading ? "Genero PDF..." : "Apri PDF consenso"}
                       </Button>
                     </div>
+                    <Dialog open={Boolean(previewUrl)} onOpenChange={(open) => { if (!open) closePreview(); }}>
+                      <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                          <DialogTitle>Anteprima consenso informato</DialogTitle>
+                        </DialogHeader>
+                        {previewUrl && (
+                          <iframe
+                            title="Anteprima consenso informato"
+                            src={previewUrl}
+                            className="h-[75vh] w-full rounded-md border border-border"
+                          />
+                        )}
+                      </DialogContent>
+                    </Dialog>
                     <div className="flex items-start gap-3">
                       <Checkbox
                         id="informed-consent"

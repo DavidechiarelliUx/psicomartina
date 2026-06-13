@@ -453,7 +453,11 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
   const BL = 2.5; // scarto baseline (pt) rispetto al yMax della riga del template
   const line = (pageIndex, text, x, yMaxTemplate, options = {}) => write(pageIndex, text, x, yMaxTemplate - BL, options);
   const check = (pageIndex, x, yMaxTemplate) => write(pageIndex, "X", x, yMaxTemplate - BL, { size: 10, bold: true, color: accentColor });
-  const dateText = (value) => (value ? formatDate(value) : "");
+  const dateText = (value) => {
+    if (!value) return "";
+    const d = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("it-IT"); // gg/mm/aaaa
+  };
   const todayText = new Date().toLocaleDateString("it-IT");
   const colloquioDate = appointmentPayload?.date || todayText;
   const paymentText = consent.paymentMethod || "Metodo tracciabile concordato con lo studio";
