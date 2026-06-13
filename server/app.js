@@ -447,109 +447,104 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
       color: rgb(1, 1, 1),
     });
   };
-  const cleanBox = (pageIndex, x, yFromTop, width, height, title) => {
-    const page = pages[pageIndex];
-    const y = page.getHeight() - yFromTop - height;
-    page.drawRectangle({
-      x,
-      y,
-      width,
-      height,
-      color: rgb(1, 1, 1),
-      borderColor: rgb(0, 0, 0),
-      borderWidth: 1,
-    });
-    page.drawText(title, {
-      x: x + 8,
-      y: y + height - 18,
-      size: 12,
-      font: boldFont,
-      color: rgb(0.35, 0.35, 0.35),
-    });
-  };
-  const check = (pageIndex, x, yFromTop) => write(pageIndex, "X", x, yFromTop, { size: 11, bold: true, color: accentColor });
+  // Posiziona i valori sulla baseline delle righe pre-stampate del template.
+  // Le coordinate Y derivano dal yMax (bordo inferiore del glifo) di ogni riga,
+  // estratto dal template con `pdftotext -bbox`, meno un piccolo offset di baseline.
+  const BL = 2.5; // scarto baseline (pt) rispetto al yMax della riga del template
+  const line = (pageIndex, text, x, yMaxTemplate, options = {}) => write(pageIndex, text, x, yMaxTemplate - BL, options);
+  const check = (pageIndex, x, yMaxTemplate) => write(pageIndex, "X", x, yMaxTemplate - BL, { size: 10, bold: true, color: accentColor });
   const dateText = (value) => (value ? formatDate(value) : "");
-  const residence = `${consent.residenceCity || ""}${consent.residenceAddress ? `, ${consent.residenceAddress}` : ""}`;
-  const appointmentText = appointmentPayload?.date && appointmentPayload?.time_slot ? `${appointmentPayload.date} ore ${appointmentPayload.time_slot}` : "";
-  const studioAddress = process.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
+  const todayText = new Date().toLocaleDateString("it-IT");
+  const colloquioDate = appointmentPayload?.date || todayText;
   const paymentText = consent.paymentMethod || "Metodo tracciabile concordato con lo studio";
-  const serviceText = consent.serviceKind === "altro" ? consent.serviceOther || "Altro" : consentServiceLabels[consent.serviceKind] || "Consulenza";
+  const consentGranted = consent.personalDataConsentChoice !== "denied";
+  const numberX = 488; // posizione della "n." civico sulle righe "in via/piazza"
 
+  // ----- PAGINA 1: dati anagrafici nel riquadro appropriato -----
   if (consent.subjectType === "minor") {
-    cleanBox(0, 66, 382, 462, 112, "MINORENNI");
-    write(0, `Minorenne: ${consent.minorFullName}`, 111, 411, { maxChars: 78 });
-    write(0, `Nato/a a: ${consent.birthPlace} il ${dateText(consent.birthDate)}`, 111, 432, { maxChars: 78 });
-    write(0, `Codice fiscale: ${consent.fiscalCode}`, 111, 453, { maxChars: 78 });
-    write(0, `Residente a: ${consent.residenceCity}`, 111, 474, { maxChars: 78 });
-    write(0, `Via/Piazza: ${consent.residenceAddress}${consent.residenceNumber ? ` n. ${consent.residenceNumber}` : ""}`, 111, 495, { maxChars: 78 });
+    line(0, consent.minorFullName, 120, 410.9, { maxChars: 78 });          // Minorenne ...
+    line(0, consent.birthPlace, 105, 425.58, { maxChars: 72 });            // nat... a ...
+    line(0, dateText(consent.birthDate), 84, 440.23, { maxChars: 14 });    // il __/__/__
+    line(0, consent.fiscalCode, 140, 454.88, { maxChars: 60 });            // codice fiscale ...
+    line(0, consent.residenceCity, 140, 469.53, { maxChars: 60 });         // residente a ...
+    line(0, consent.residenceAddress, 128, 484.18, { maxChars: 60 });      // in via/piazza ...
+    line(0, consent.residenceNumber, numberX, 484.18, { maxChars: 8 });
   } else if (consent.subjectType === "protected_person") {
-    cleanBox(0, 66, 544, 462, 112, "PERSONE SOTTO TUTELA");
-    write(0, `Sig./Sig.ra: ${consent.clientFullName}`, 111, 571, { maxChars: 76 });
-    write(0, `Nato/a a: ${consent.birthPlace} il ${dateText(consent.birthDate)}`, 116, 595, { maxChars: 76 });
-    write(0, `Codice fiscale: ${consent.fiscalCode}`, 116, 619, { maxChars: 76 });
-    write(0, `Residente a: ${consent.residenceCity}`, 116, 643, { maxChars: 76 });
-    write(0, `Via/Piazza: ${consent.residenceAddress}${consent.residenceNumber ? ` n. ${consent.residenceNumber}` : ""}`, 116, 667, { maxChars: 76 });
+    line(0, consent.clientFullName, 95, 535.96, { maxChars: 80 });         // Sig ...
+    line(0, consent.birthPlace, 105, 550.61, { maxChars: 72 });            // nat... a ...
+    line(0, dateText(consent.birthDate), 84, 565.26, { maxChars: 14 });    // il __/__/__
+    line(0, consent.fiscalCode, 140, 579.91, { maxChars: 60 });            // codice fiscale ...
+    line(0, consent.residenceCity, 140, 594.56, { maxChars: 60 });         // residente a ...
+    line(0, consent.residenceAddress, 128, 609.20, { maxChars: 60 });      // in via/piazza ...
+    line(0, consent.residenceNumber, numberX, 609.20, { maxChars: 8 });
   } else {
-    cleanBox(0, 66, 250, 462, 112, "ADULTI");
-    write(0, `Sig./Sig.ra: ${consent.clientFullName}`, 111, 279, { maxChars: 78 });
-    write(0, `Nato/a a: ${consent.birthPlace} il ${dateText(consent.birthDate)}`, 111, 300, { maxChars: 78 });
-    write(0, `Codice fiscale: ${consent.fiscalCode}`, 111, 321, { maxChars: 78 });
-    write(0, `Residente a: ${consent.residenceCity}`, 111, 342, { maxChars: 78 });
-    write(0, `Via/Piazza: ${consent.residenceAddress}${consent.residenceNumber ? ` n. ${consent.residenceNumber}` : ""}`, 111, 363, { maxChars: 78 });
+    line(0, consent.clientFullName, 118, 271.26, { maxChars: 78 });        // Sig/Sig.ra ...
+    line(0, consent.birthPlace, 105, 285.91, { maxChars: 72 });            // nat... a ...
+    line(0, dateText(consent.birthDate), 84, 300.56, { maxChars: 14 });    // il __/__/__
+    line(0, consent.fiscalCode, 140, 315.20, { maxChars: 60 });            // codice fiscale ...
+    line(0, consent.residenceCity, 140, 329.85, { maxChars: 60 });         // residente a ...
+    line(0, consent.residenceAddress, 128, 344.50, { maxChars: 60 });      // in via/piazza ...
+    line(0, consent.residenceNumber, numberX, 344.50, { maxChars: 8 });
   }
 
-  cover(0, 108, 706, 470, 88);
-  write(0, `Prestazione scelta: ${serviceText}`, 116, 724, { maxChars: 95 });
+  // Prestazione scelta: marca con X il punto elenco corrispondente.
+  const serviceMarkY = consent.serviceKind === "sostegno_psicologico" ? 723 : consent.serviceKind === "altro" ? 742 : 704;
+  check(0, 92, serviceMarkY);
 
-  cover(1, 169, 96, 365, 18);
-  cover(1, 282, 375, 270, 18);
-  cover(1, 137, 439, 410, 42);
-  write(1, studioAddress, 170, 107, { maxChars: 76 });
-  write(1, consent.compensationAmount || "45", 93, 356, { maxChars: 10, bold: true });
-  write(1, consent.taxRegime, 188, 385, { maxChars: 74, size: 8 });
-  write(1, paymentText, 140, 451, { maxChars: 85 });
-  write(1, appointmentText, 140, 470, { maxChars: 70 });
+  // ----- PAGINA 2: modalità di pagamento (riga "Il pagamento avverrà ...") -----
+  line(1, paymentText, 218, 398.06, { maxChars: 78 });
+  // Compenso: il template riporta già "45 €"; sovrascrivi solo se diverso dal default.
+  if (consent.compensationAmount && String(consent.compensationAmount).trim() !== "45") {
+    cover(1, 128, 333, 16, 13);
+    line(1, String(consent.compensationAmount), 130, 342.38, { maxChars: 6, bold: true });
+  }
 
-  write(4, new Date().toLocaleDateString("it-IT"), 345, 785, { maxChars: 12 });
+  // ----- PAGINA 5: data del colloquio ("avvenuto in data __/__/__") -----
+  line(4, colloquioDate, 408, 724.31, { maxChars: 14, size: 8 });
 
+  // ----- Pagine firma: scegli il riquadro in base al tipo di soggetto -----
   const finalBox = consent.signatureBox || consent.subjectType;
-  const consentGranted = consent.personalDataConsentChoice !== "denied";
   if (finalBox === "minor") {
-    write(5, consent.tutorFullName, 87, 296, { maxChars: 76 });
-    write(5, consent.minorFullName, 166, 314, { maxChars: 54 });
-    write(5, consent.birthPlace, 96, 333, { maxChars: 44 });
-    write(5, dateText(consent.birthDate), 73, 351, { maxChars: 12 });
-    write(5, consent.residenceCity, 93, 370, { maxChars: 44 });
-    write(5, consent.residenceAddress, 97, 389, { maxChars: 58 });
-    write(5, consent.residenceNumber, 516, 389, { maxChars: 8 });
-    check(5, consentGranted ? 96 : 255, 495);
-    write(5, new Date().toLocaleDateString("it-IT"), 63, 558, { maxChars: 12 });
-    write(5, consent.tutorFullName, 390, 558, { maxChars: 34 });
-    write(5, consent.secondTutorFullName, 85, 605, { maxChars: 76 });
-    write(5, consent.minorFullName, 179, 623, { maxChars: 54 });
-    write(5, consent.birthPlace, 96, 642, { maxChars: 44 });
-    write(5, dateText(consent.birthDate), 73, 660, { maxChars: 12 });
-    write(6, consent.residenceCity, 93, 30, { maxChars: 44 });
-    write(6, consent.residenceAddress, 100, 48, { maxChars: 58 });
-    write(6, consent.residenceNumber, 516, 48, { maxChars: 8 });
-    check(6, consentGranted ? 96 : 255, 153);
-    write(6, new Date().toLocaleDateString("it-IT"), 63, 216, { maxChars: 12 });
-    write(6, consent.secondTutorFullName, 390, 216, { maxChars: 34 });
+    // MADRE (pagina 6)
+    line(5, consent.tutorFullName, 112, 409.31, { maxChars: 60 });         // La Sig.ra ...
+    line(5, consent.minorFullName, 185, 423.96, { maxChars: 54 });         // madre del minorenne ...
+    line(5, consent.birthPlace, 125, 438.61, { maxChars: 56 });            // nata a ...
+    line(5, dateText(consent.birthDate), 84, 453.26, { maxChars: 14 });    // il __/__/__
+    line(5, consent.residenceCity, 125, 467.91, { maxChars: 60 });         // residente a ...
+    line(5, consent.residenceAddress, 128, 482.55, { maxChars: 60 });      // in via/piazza ...
+    line(5, consent.residenceNumber, numberX, 482.55, { maxChars: 8 });
+    check(5, consentGranted ? 73.5 : 207, 561.32);                         // FORNISCE / NON FORNISCE (madre)
+    line(5, todayText, 130, 624.34);                                       // Luogo e data
+    line(5, consent.tutorFullName, 425, 624.34, { maxChars: 30 });         // Firma della madre
+    // PADRE (pagina 6 -> pagina 7)
+    line(5, consent.secondTutorFullName, 100, 712.23, { maxChars: 60 });   // Il Sig. ...
+    line(5, consent.minorFullName, 180, 726.88, { maxChars: 54 });         // padre del minorenne ...
+    line(5, consent.birthPlace, 125, 741.53, { maxChars: 56 });            // nato a ...
+    line(5, dateText(consent.birthDate), 84, 756.18, { maxChars: 14 });    // il __/__/__
+    line(6, consent.residenceCity, 125, 84.21, { maxChars: 60 });          // residente a ...
+    line(6, consent.residenceAddress, 128, 98.86, { maxChars: 60 });       // in via/piazza ...
+    line(6, consent.residenceNumber, numberX, 98.86, { maxChars: 8 });
+    check(6, consentGranted ? 73.5 : 207, 177.62);
+    line(6, todayText, 130, 240.64);
+    line(6, consent.secondTutorFullName, 418, 240.64, { maxChars: 28 });
   } else if (finalBox === "protected_person") {
-    write(6, consent.tutorFullName || consent.signedName, 107, 279, { maxChars: 70 });
-    write(6, consent.birthPlace, 93, 298, { maxChars: 44 });
-    write(6, dateText(consent.birthDate), 349, 298, { maxChars: 12 });
-    write(6, consent.clientFullName, 166, 317, { maxChars: 55 });
-    write(6, residence, 93, 373, { maxChars: 64 });
-    write(6, consent.residenceNumber, 516, 391, { maxChars: 8 });
-    check(6, consentGranted ? 96 : 255, 491);
-    write(6, new Date().toLocaleDateString("it-IT"), 63, 554, { maxChars: 12 });
-    write(6, consent.tutorFullName || consent.signedName, 390, 554, { maxChars: 34 });
+    // PERSONE SOTTO TUTELA (pagina 7)
+    line(6, consent.tutorFullName || consent.signedName, 120, 352.93, { maxChars: 58 }); // La Sig.ra/Il Sig. (tutore)
+    line(6, consent.birthPlace, 120, 367.58, { maxChars: 52 });            // nata/o a ...
+    line(6, dateText(consent.birthDate), 448, 367.58, { maxChars: 14, size: 8 }); // il __/__/__
+    line(6, consent.clientFullName, 185, 382.23, { maxChars: 48 });        // Tutore del Sig. ... (assistito)
+    line(6, consent.residenceCity, 125, 426.17, { maxChars: 60 });         // residente a ...
+    line(6, consent.residenceAddress, 128, 440.82, { maxChars: 60 });      // in via/piazza ...
+    line(6, consent.residenceNumber, numberX, 440.82, { maxChars: 8 });
+    check(6, consentGranted ? 73.5 : 207, 519.59);
+    line(6, todayText, 130, 582.61);
+    line(6, consent.tutorFullName || consent.signedName, 405, 582.61, { maxChars: 34 });
   } else {
-    write(5, consent.signedName || consent.clientFullName, 210, 153, { maxChars: 58 });
-    check(5, consentGranted ? 94 : 253, 217);
-    write(5, new Date().toLocaleDateString("it-IT"), 63, 253, { maxChars: 12 });
-    write(5, consent.signedName || consent.clientFullName, 390, 253, { maxChars: 34 });
+    // ADULTI (pagina 6)
+    line(5, consent.signedName || consent.clientFullName, 140, 153.33, { maxChars: 50 }); // La Sig.ra/Il Sig. ...
+    check(5, consentGranted ? 73.5 : 207, 217.44);
+    line(5, todayText, 130, 280.46);
+    line(5, consent.signedName || consent.clientFullName, 405, 280.46, { maxChars: 34 });
   }
 
   const bytes = await pdfDoc.save();
