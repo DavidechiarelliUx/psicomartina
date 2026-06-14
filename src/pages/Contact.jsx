@@ -37,6 +37,7 @@ const emptyConsent = {
   residence_number: "",
   service_kind: "consulenza",
   service_other: "",
+  service_location: "Via Tricerro, 100",
   minor_full_name: "",
   tutor_full_name: "",
   second_tutor_full_name: "",
@@ -462,6 +463,30 @@ export default function Contact() {
                           />
                         </div>
                       )}
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label>Sede della prestazione *</Label>
+                        <Select
+                          value={["Via Tricerro, 100", "Online"].includes(form.consent.service_location) ? form.consent.service_location : "__altra__"}
+                          onValueChange={(v) => updateConsent("service_location", v === "__altra__" ? "" : v)}
+                        >
+                          <SelectTrigger className="bg-background">
+                            <SelectValue placeholder="Seleziona la sede" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Via Tricerro, 100">In studio (Via Tricerro, 100)</SelectItem>
+                            <SelectItem value="Online">Online</SelectItem>
+                            <SelectItem value="__altra__">Altra sede…</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {!["Via Tricerro, 100", "Online"].includes(form.consent.service_location) && (
+                          <Input
+                            value={form.consent.service_location}
+                            onChange={(e) => updateConsent("service_location", e.target.value)}
+                            placeholder="Indirizzo o descrizione della sede"
+                            className="bg-background mt-2"
+                          />
+                        )}
+                      </div>
                       {(form.consent.subject_type === "minor" || form.consent.subject_type === "protected_person") && (
                         <>
                           {form.consent.subject_type === "minor" && (

@@ -353,6 +353,7 @@ function normalizeConsentPayload(payload, appointmentPayload, options = {}) {
     residenceNumber: sanitizeText(consent.residence_number) || null,
     serviceKind: ["consulenza", "sostegno_psicologico", "altro"].includes(consent.service_kind) ? consent.service_kind : "consulenza",
     serviceOther: sanitizeText(consent.service_other) || null,
+    serviceLocation: sanitizeText(consent.service_location) || "Via Tricerro, 100",
     minorFullName: sanitizeText(consent.minor_full_name) || null,
     tutorFullName: sanitizeText(consent.tutor_full_name) || null,
     secondTutorFullName: sanitizeText(consent.second_tutor_full_name) || null,
@@ -517,6 +518,12 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
   // Prestazione scelta: marca con X il punto elenco corrispondente.
   const serviceMarkY = consent.serviceKind === "sostegno_psicologico" ? 723 : consent.serviceKind === "altro" ? 742 : 704;
   check(0, 92, serviceMarkY);
+
+  // ----- PAGINA 2: sede della prestazione -----
+  // Copre il default stampato "Via Tricerro, 100" e scrive la sede scelta
+  // (studio, online o altra sede).
+  cover(1, 137, 100, 388, 14);
+  line(1, consent.serviceLocation || "Via Tricerro, 100", 145, 110.52, { maxChars: 68 });
 
   // ----- PAGINA 2: modalità di pagamento (riga "Il pagamento avverrà ...") -----
   line(1, paymentText, 218, 398.06, { maxChars: 78 });
