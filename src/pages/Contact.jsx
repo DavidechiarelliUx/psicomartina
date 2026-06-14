@@ -610,40 +610,13 @@ export default function Contact() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="compensation-amount">Compenso per incontro</Label>
-                        <Input
-                          id="compensation-amount"
-                          value={form.consent.compensation_amount}
-                          readOnly
-                          tabIndex={-1}
-                          aria-readonly="true"
-                          className="bg-muted text-muted-foreground cursor-not-allowed"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Riquadro sottoscrizione *</Label>
-                        <Select value={form.consent.signature_box} onValueChange={(v) => updateConsent("signature_box", v)}>
-                          <SelectTrigger className="bg-background">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="adult">Adulti</SelectItem>
-                            <SelectItem value="minor">Minorenni</SelectItem>
-                            <SelectItem value="protected_person">Persone sotto tutela</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="tax-regime">Regime fiscale / note sul compenso</Label>
-                        <Input
-                          id="tax-regime"
-                          value={form.consent.tax_regime}
-                          readOnly
-                          tabIndex={-1}
-                          aria-readonly="true"
-                          className="bg-muted text-muted-foreground cursor-not-allowed"
-                        />
+                      <div className="sm:col-span-2 rounded-xl border border-border bg-muted/40 p-4 text-sm">
+                        <p className="text-foreground">
+                          <span className="font-medium">Compenso per incontro:</span> 45 € a seduta
+                        </p>
+                        <p className="mt-1 text-muted-foreground">
+                          <span className="font-medium text-foreground">Regime fiscale:</span> Operazione esente IVA ex art.10, comma 1, n.18 del D.P.R. n.633/1972
+                        </p>
                       </div>
                       <div className="space-y-2 sm:col-span-2">
                         <Label>Consenso trattamento dati personali *</Label>
