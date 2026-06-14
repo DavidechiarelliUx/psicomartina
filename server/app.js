@@ -336,7 +336,8 @@ function mapConsent(consent) {
   };
 }
 
-function normalizeConsentPayload(payload, appointmentPayload) {
+function normalizeConsentPayload(payload, appointmentPayload, options = {}) {
+  const { preview = false } = options;
   const consent = payload?.consent || {};
   const subjectType = ["adult", "minor", "protected_person"].includes(consent.subject_type) ? consent.subject_type : "adult";
   const normalized = {
@@ -365,30 +366,34 @@ function normalizeConsentPayload(payload, appointmentPayload) {
     signedName: sanitizeText(consent.signed_name || appointmentPayload.client_name),
   };
 
-  if (!normalized.clientFullName || !normalized.clientEmail || !normalized.fiscalCode || !normalized.birthPlace || !normalized.birthDate) {
-    const error = new Error("Compila i dati obbligatori del consenso informato: nome, email, codice fiscale, luogo e data di nascita.");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (!normalized.residenceCity || !normalized.residenceAddress) {
-    const error = new Error("Compila residenza e indirizzo nel consenso informato.");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (!normalized.privacyConsent || !normalized.termsAccepted || !normalized.signedName) {
-    const error = new Error("Accetta il consenso informato e inserisci il nome per la firma.");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (subjectType === "minor" && (!normalized.minorFullName || !normalized.tutorFullName || !normalized.secondTutorFullName)) {
-    const error = new Error("Per un minore servono nome del minore, genitore/tutore e secondo genitore/tutore.");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (subjectType === "protected_person" && !normalized.tutorFullName) {
-    const error = new Error("Per una persona sotto tutela serve il nome del tutore.");
-    error.statusCode = 400;
-    throw error;
+  // In modalità anteprima si genera il PDF con i dati disponibili, senza obblighi:
+  // serve a controllare il modulo PRIMA di accettare il consenso e firmare.
+  if (!preview) {
+    if (!normalized.clientFullName || !normalized.clientEmail || !normalized.fiscalCode || !normalized.birthPlace || !normalized.birthDate) {
+      const error = new Error("Compila i dati obbligatori del consenso informato: nome, email, codice fiscale, luogo e data di nascita.");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (!normalized.residenceCity || !normalized.residenceAddress) {
+      const error = new Error("Compila residenza e indirizzo nel consenso informato.");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (!normalized.privacyConsent || !normalized.termsAccepted || !normalized.signedName) {
+      const error = new Error("Accetta il consenso informato e inserisci il nome per la firma.");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (subjectType === "minor" && (!normalized.minorFullName || !normalized.tutorFullName || !normalized.secondTutorFullName)) {
+      const error = new Error("Per un minore servono nome del minore, genitore/tutore e secondo genitore/tutore.");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (subjectType === "protected_person" && !normalized.tutorFullName) {
+      const error = new Error("Per una persona sotto tutela serve il nome del tutore.");
+      error.statusCode = 400;
+      throw error;
+    }
   }
 
   return normalized;
@@ -972,7 +977,7 @@ async function sendGeneratedConsentPdf(res, consentId) {
 async function sendPreviewConsentPdf(res, payload) {
   const email = String(payload.client_email || "").trim().toLowerCase();
   const fullName = String(payload.client_name || "").trim();
-  const consent = normalizeConsentPayload(payload, { ...payload, client_email: email, client_name: fullName });
+  const consent = normalizeConsentPayload(payload, { ...payload, client_email: email, client_name: fullName }, { preview: true });
   const pdfBuffer = await generateConsentPdf({ consent, appointmentPayload: payload });
   const filename = `anteprima-consenso-${slugify(fullName || consent.clientFullName || "cliente")}.pdf`;
   res.writeHead(200, {
@@ -1389,7 +1394,7 @@ export async function handleApiRequest(req, res) {
     }
 
     if (req.method === "POST" && url.pathname === "/api/consents/preview") {
-      return sendPreviewConsentPdf(res, await readJson(req));
+      return await sendPreviewConsentPdf(res, await readJson(req));
     }
 
     if (req.method === "GET" && url.pathname === "/api/booking-schedules") {
