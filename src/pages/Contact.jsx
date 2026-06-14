@@ -158,11 +158,14 @@ export default function Contact() {
     setForm((prev) => {
       const next = { ...prev, [field]: value };
       if (field === "client_name") {
+        const isMinor = prev.consent.subject_type === "minor";
         const shouldSyncName = !prev.consent.client_full_name || prev.consent.client_full_name === prev.client_name;
+        const shouldSyncMinor = !prev.consent.minor_full_name || prev.consent.minor_full_name === prev.client_name;
         const shouldSyncSignature = !prev.consent.signed_name || prev.consent.signed_name === prev.client_name;
         next.consent = {
           ...next.consent,
           client_full_name: shouldSyncName ? value : next.consent.client_full_name,
+          minor_full_name: isMinor && shouldSyncMinor ? value : next.consent.minor_full_name,
           signed_name: shouldSyncSignature ? value : next.consent.signed_name,
         };
       }
@@ -184,6 +187,10 @@ export default function Contact() {
       const consent = { ...prev.consent, [field]: value };
       if (field === "subject_type") {
         consent.signature_box = value;
+        // Selezionando "Minorenne", precompila il nome del minore con quello dell'assistito digitato.
+        if (value === "minor" && !consent.minor_full_name) {
+          consent.minor_full_name = prev.consent.client_full_name || prev.client_name || "";
+        }
       }
       return { ...prev, consent };
     });

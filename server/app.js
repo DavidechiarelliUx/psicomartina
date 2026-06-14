@@ -450,7 +450,7 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
   // Posiziona i valori sulla baseline delle righe pre-stampate del template.
   // Le coordinate Y derivano dal yMax (bordo inferiore del glifo) di ogni riga,
   // estratto dal template con `pdftotext -bbox`, meno un piccolo offset di baseline.
-  const BL = 2.5; // scarto baseline (pt) rispetto al yMax della riga del template
+  const BL = 4; // scarto baseline (pt) rispetto al yMax della riga del template (testo leggermente più alto)
   const line = (pageIndex, text, x, yMaxTemplate, options = {}) => write(pageIndex, text, x, yMaxTemplate - BL, options);
   const check = (pageIndex, x, yMaxTemplate) => write(pageIndex, "X", x, yMaxTemplate - BL, { size: 10, bold: true, color: accentColor });
   const dateText = (value) => {
@@ -458,8 +458,26 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
     const d = value instanceof Date ? value : new Date(value);
     return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("it-IT"); // gg/mm/aaaa
   };
+  // Normalizza una data in gg/mm/aaaa (accetta Date, ISO yyyy-mm-dd o già gg/mm/aaaa).
+  const toItalianDate = (value) => {
+    if (!value) return "";
+    if (value instanceof Date) return dateText(value);
+    const s = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const [y, m, d] = s.slice(0, 10).split("-"); return `${d}/${m}/${y}`; }
+    return s;
+  };
+  // Scrive una data gg/mm/aaaa nelle tre caselle pre-stampate "__/__/____"
+  // senza ridisegnare le barre, così non si sovrappongono a quelle del template.
+  const dateSlots = (pageIndex, value, xDay, xMonth, xYear, yMaxTemplate, size = 9) => {
+    const t = value instanceof Date ? dateText(value) : toItalianDate(value);
+    if (!t) return;
+    const [d = "", m = "", y = ""] = t.split("/");
+    line(pageIndex, d, xDay, yMaxTemplate, { size, maxChars: 2 });
+    line(pageIndex, m, xMonth, yMaxTemplate, { size, maxChars: 2 });
+    line(pageIndex, y, xYear, yMaxTemplate, { size, maxChars: 4 });
+  };
   const todayText = new Date().toLocaleDateString("it-IT");
-  const colloquioDate = appointmentPayload?.date || todayText;
+  const colloquioDate = toItalianDate(appointmentPayload?.date) || todayText;
   const paymentText = consent.paymentMethod || "Metodo tracciabile concordato con lo studio";
   const consentGranted = consent.personalDataConsentChoice !== "denied";
   const numberX = 488; // posizione della "n." civico sulle righe "in via/piazza"
@@ -468,7 +486,7 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
   if (consent.subjectType === "minor") {
     line(0, consent.minorFullName, 120, 410.9, { maxChars: 78 });          // Minorenne ...
     line(0, consent.birthPlace, 105, 425.58, { maxChars: 72 });            // nat... a ...
-    line(0, dateText(consent.birthDate), 84, 440.23, { maxChars: 14 });    // il __/__/__
+    dateSlots(0, consent.birthDate, 81, 105, 124, 440.23);    // il __/__/__
     line(0, consent.fiscalCode, 140, 454.88, { maxChars: 60 });            // codice fiscale ...
     line(0, consent.residenceCity, 140, 469.53, { maxChars: 60 });         // residente a ...
     line(0, consent.residenceAddress, 128, 484.18, { maxChars: 60 });      // in via/piazza ...
@@ -476,7 +494,7 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
   } else if (consent.subjectType === "protected_person") {
     line(0, consent.clientFullName, 95, 535.96, { maxChars: 80 });         // Sig ...
     line(0, consent.birthPlace, 105, 550.61, { maxChars: 72 });            // nat... a ...
-    line(0, dateText(consent.birthDate), 84, 565.26, { maxChars: 14 });    // il __/__/__
+    dateSlots(0, consent.birthDate, 81, 105, 124, 565.26);    // il __/__/__
     line(0, consent.fiscalCode, 140, 579.91, { maxChars: 60 });            // codice fiscale ...
     line(0, consent.residenceCity, 140, 594.56, { maxChars: 60 });         // residente a ...
     line(0, consent.residenceAddress, 128, 609.20, { maxChars: 60 });      // in via/piazza ...
@@ -484,7 +502,7 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
   } else {
     line(0, consent.clientFullName, 118, 271.26, { maxChars: 78 });        // Sig/Sig.ra ...
     line(0, consent.birthPlace, 105, 285.91, { maxChars: 72 });            // nat... a ...
-    line(0, dateText(consent.birthDate), 84, 300.56, { maxChars: 14 });    // il __/__/__
+    dateSlots(0, consent.birthDate, 81, 105, 124, 300.56);    // il __/__/__
     line(0, consent.fiscalCode, 140, 315.20, { maxChars: 60 });            // codice fiscale ...
     line(0, consent.residenceCity, 140, 329.85, { maxChars: 60 });         // residente a ...
     line(0, consent.residenceAddress, 128, 344.50, { maxChars: 60 });      // in via/piazza ...
@@ -504,7 +522,7 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
   }
 
   // ----- PAGINA 5: data del colloquio ("avvenuto in data __/__/__") -----
-  line(4, colloquioDate, 408, 724.31, { maxChars: 14, size: 8 });
+  dateSlots(4, colloquioDate, 410, 436, 462, 724.31, 8);
 
   // ----- Pagine firma: scegli il riquadro in base al tipo di soggetto -----
   const finalBox = consent.signatureBox || consent.subjectType;
@@ -513,7 +531,7 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
     line(5, consent.tutorFullName, 112, 409.31, { maxChars: 60 });         // La Sig.ra ...
     line(5, consent.minorFullName, 185, 423.96, { maxChars: 54 });         // madre del minorenne ...
     line(5, consent.birthPlace, 125, 438.61, { maxChars: 56 });            // nata a ...
-    line(5, dateText(consent.birthDate), 84, 453.26, { maxChars: 14 });    // il __/__/__
+    dateSlots(5, consent.birthDate, 81, 105, 124, 453.26);    // il __/__/__
     line(5, consent.residenceCity, 125, 467.91, { maxChars: 60 });         // residente a ...
     line(5, consent.residenceAddress, 128, 482.55, { maxChars: 60 });      // in via/piazza ...
     line(5, consent.residenceNumber, numberX, 482.55, { maxChars: 8 });
@@ -524,7 +542,7 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
     line(5, consent.secondTutorFullName, 100, 712.23, { maxChars: 60 });   // Il Sig. ...
     line(5, consent.minorFullName, 180, 726.88, { maxChars: 54 });         // padre del minorenne ...
     line(5, consent.birthPlace, 125, 741.53, { maxChars: 56 });            // nato a ...
-    line(5, dateText(consent.birthDate), 84, 756.18, { maxChars: 14 });    // il __/__/__
+    dateSlots(5, consent.birthDate, 81, 105, 124, 756.18);    // il __/__/__
     line(6, consent.residenceCity, 125, 84.21, { maxChars: 60 });          // residente a ...
     line(6, consent.residenceAddress, 128, 98.86, { maxChars: 60 });       // in via/piazza ...
     line(6, consent.residenceNumber, numberX, 98.86, { maxChars: 8 });
@@ -533,10 +551,10 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
     line(6, consent.secondTutorFullName, 418, 240.64, { maxChars: 28 });
   } else if (finalBox === "protected_person") {
     // PERSONE SOTTO TUTELA (pagina 7)
-    line(6, consent.tutorFullName || consent.signedName, 120, 352.93, { maxChars: 58 }); // La Sig.ra/Il Sig. (tutore)
+    line(6, consent.tutorFullName || consent.signedName, 150, 352.93, { maxChars: 54 }); // La Sig.ra/Il Sig. (tutore)
     line(6, consent.birthPlace, 120, 367.58, { maxChars: 52 });            // nata/o a ...
-    line(6, dateText(consent.birthDate), 448, 367.58, { maxChars: 14, size: 8 }); // il __/__/__
-    line(6, consent.clientFullName, 185, 382.23, { maxChars: 48 });        // Tutore del Sig. ... (assistito)
+    dateSlots(6, consent.birthDate, 449, 473, 492, 367.58, 8); // il __/__/__
+    line(6, consent.clientFullName, 192, 382.23, { maxChars: 46 });        // Tutore del Sig. ... (assistito)
     line(6, consent.residenceCity, 125, 426.17, { maxChars: 60 });         // residente a ...
     line(6, consent.residenceAddress, 128, 440.82, { maxChars: 60 });      // in via/piazza ...
     line(6, consent.residenceNumber, numberX, 440.82, { maxChars: 8 });
