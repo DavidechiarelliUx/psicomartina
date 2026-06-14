@@ -611,13 +611,14 @@ export default function Contact() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="compensation-amount">Compenso per incontro *</Label>
+                        <Label htmlFor="compensation-amount">Compenso per incontro</Label>
                         <Input
                           id="compensation-amount"
                           value={form.consent.compensation_amount}
-                          onChange={(e) => updateConsent("compensation_amount", e.target.value)}
-                          placeholder="45"
-                          className="bg-background"
+                          readOnly
+                          tabIndex={-1}
+                          aria-readonly="true"
+                          className="bg-muted text-muted-foreground cursor-not-allowed"
                         />
                       </div>
                       <div className="space-y-2">
@@ -638,8 +639,10 @@ export default function Contact() {
                         <Input
                           id="tax-regime"
                           value={form.consent.tax_regime}
-                          onChange={(e) => updateConsent("tax_regime", e.target.value)}
-                          className="bg-background"
+                          readOnly
+                          tabIndex={-1}
+                          aria-readonly="true"
+                          className="bg-muted text-muted-foreground cursor-not-allowed"
                         />
                       </div>
                       <div className="space-y-2 sm:col-span-2">
