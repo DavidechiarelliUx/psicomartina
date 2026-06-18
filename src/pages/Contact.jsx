@@ -18,6 +18,7 @@ import SectionHeading from "../components/shared/SectionHeading";
 import { apiFetch } from "@/api/client";
 import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
+import { useConsent, useAnalyticsConsent } from "@/lib/consent";
 
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
 const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
@@ -68,6 +69,37 @@ function getInitialForm() {
     informed_consent_accepted: false,
     consent: { ...emptyConsent },
   };
+}
+
+// La mappa Google viene caricata solo dopo il consenso ai cookie di terze parti.
+// Senza consenso mostra un segnaposto con invito ad attivare le preferenze.
+function StudioMap({ mapUrl }) {
+  const analyticsAllowed = useAnalyticsConsent();
+  const { openPreferences } = useConsent();
+
+  if (!analyticsAllowed) {
+    return (
+      <div className="flex h-64 w-full flex-col items-center justify-center gap-3 border-t border-border bg-muted/40 p-6 text-center">
+        <MapPin className="h-6 w-6 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">
+          La mappa è fornita da Google Maps. Per visualizzarla, attiva i cookie di terze parti.
+        </p>
+        <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={openPreferences}>
+          Attiva e mostra la mappa
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <iframe
+      title="Mappa dello studio"
+      src={mapUrl}
+      loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
+      className="h-64 w-full border-0"
+    />
+  );
 }
 
 export default function Contact() {
@@ -272,13 +304,7 @@ export default function Contact() {
                   <p className="font-heading text-lg font-semibold text-foreground">Dove ricevo</p>
                   <p className="mt-1 text-sm text-muted-foreground">{studioAddress}</p>
                 </div>
-                <iframe
-                  title="Mappa dello studio"
-                  src={studioMapUrl}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="h-64 w-full border-0"
-                />
+                <StudioMap mapUrl={studioMapUrl} />
               </div>
             </div>
 
@@ -470,8 +496,8 @@ export default function Contact() {
                       <div className="space-y-2 sm:col-span-2">
                         <Label>Sede della prestazione *</Label>
                         <Select
-                          value={serviceLocationOptions.includes(form.consent.service_location) ? form.consent.service_location : "__altra__"}
-                          onValueChange={(v) => updateConsent("service_location", v === "__altra__" ? "" : v)}
+                          value={serviceLocationOptions.includes(form.consent.service_location) ? form.consent.service_location : defaultServiceLocation}
+                          onValueChange={(v) => updateConsent("service_location", v)}
                         >
                           <SelectTrigger className="bg-background">
                             <SelectValue placeholder="Seleziona la sede" />
@@ -483,17 +509,8 @@ export default function Contact() {
                               </SelectItem>
                             ))}
                             <SelectItem value="Online">Online</SelectItem>
-                            <SelectItem value="__altra__">Altra sede…</SelectItem>
                           </SelectContent>
                         </Select>
-                        {!serviceLocationOptions.includes(form.consent.service_location) && (
-                          <Input
-                            value={form.consent.service_location}
-                            onChange={(e) => updateConsent("service_location", e.target.value)}
-                            placeholder="Indirizzo o descrizione della sede"
-                            className="bg-background mt-2"
-                          />
-                        )}
                       </div>
                       {(form.consent.subject_type === "minor" || form.consent.subject_type === "protected_person") && (
                         <>
