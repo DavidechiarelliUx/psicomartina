@@ -20,7 +20,7 @@ export default function HeroSection() {
             className="order-2 lg:order-1"
           >
             <span className="inline-block text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-5">
-              Dott.ssa Martina Giovinazzo — Psicologa &amp; Psicoterapeuta
+              Dott.ssa Martina Giovinazzo — Psicologa
             </span>
             <h1 className="font-heading text-hero-sm md:text-hero font-semibold text-foreground leading-tight">
               Uno spazio sicuro dove <span className="text-primary italic">ascoltarti</span> davvero
@@ -57,7 +57,7 @@ export default function HeroSection() {
               <div className="absolute -inset-4 bg-gradient-to-br from-secondary/40 to-primary/20 rounded-[2rem] blur-2xl" />
               <img
                 src={HERO_IMG}
-                alt="Dott.ssa Martina Giovinazzo — Psicologa e Psicoterapeuta"
+                alt="Dott.ssa Martina Giovinazzo — Psicologa"
                 className="relative rounded-[1.5rem] shadow-2xl w-full max-w-md object-cover aspect-[3/4]"
               />
               <div className="absolute -bottom-4 -left-4 bg-card border border-border rounded-xl p-4 shadow-lg">

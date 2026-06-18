@@ -32,7 +32,7 @@ export default function LegalNotice() {
 
           <h2>1. Titolare del sito</h2>
           <p>
-            Dott.ssa Martina Giovinazzo, Psicologa e Psicoterapeuta — Iscrizione all'Albo degli Psicologi del {alboRegion} n.{" "}
+            Dott.ssa Martina Giovinazzo, Psicologa — Iscrizione all'Albo degli Psicologi del {alboRegion} n.{" "}
             {alboNumber}.
             <br />
             Sede: {studioAddress} — P.IVA: {studioVat}
@@ -42,7 +42,7 @@ export default function LegalNotice() {
 
           <h2>2. Natura delle prestazioni e dei contenuti</h2>
           <p>
-            Le prestazioni offerte sono di natura psicologica e psicoterapeutica e vengono erogate nel rispetto del Codice
+            Le prestazioni offerte sono di natura psicologica e vengono erogate nel rispetto del Codice
             Deontologico degli Psicologi italiani. I contenuti pubblicati su questo sito (articoli del blog, descrizioni dei
             servizi, materiali informativi) hanno <strong>finalità esclusivamente informativa e divulgativa</strong> e{" "}
             <strong>non costituiscono diagnosi, terapia, parere clinico o prescrizione</strong>. La lettura dei contenuti non

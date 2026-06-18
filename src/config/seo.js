@@ -3,7 +3,7 @@ export const SITE_NAME = "Studio Psicomartina";
 
 export const seoPages = {
   home: {
-    title: "Psicologa e Psicoterapeuta a Roma",
+    title: "Psicologa a Roma",
     path: "/",
     description:
       "Scopri un supporto psicologico personalizzato per ansia, relazioni e autostima. Prenota un primo colloquio e inizia il tuo percorso con fiducia.",
@@ -12,7 +12,7 @@ export const seoPages = {
     title: "Chi Sono",
     path: "/chi-sono",
     description:
-      "Conosci Martina Giovinazzo, psicologa e psicoterapeuta a Roma. Scopri approccio, formazione e valori per scegliere il percorso più adatto a te.",
+      "Conosci Martina Giovinazzo, psicologa a Roma. Scopri approccio, formazione e valori per scegliere il percorso più adatto a te.",
   },
   services: {
     title: "Servizi di Psicologia",

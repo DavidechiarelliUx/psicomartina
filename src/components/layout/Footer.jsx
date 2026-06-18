@@ -22,7 +22,7 @@ export default function Footer() {
               <span className="font-heading text-xl font-semibold text-background">Dott.ssa Giovinazzo</span>
             </div>
             <p className="text-background/60 text-sm leading-relaxed max-w-xs">
-              Psicologa e psicoterapeuta. Uno spazio sicuro dove ritrovare il tuo equilibrio e la serenità che meriti.
+              Psicologa. Uno spazio sicuro dove ritrovare il tuo equilibrio e la serenità che meriti.
             </p>
           </div>
 

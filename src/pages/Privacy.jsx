@@ -27,7 +27,7 @@ export default function Privacy() {
 
           <h2>1. Titolare del Trattamento</h2>
           <p>
-            Dott.ssa Martina Giovinazzo, Psicologa e Psicoterapeuta — Iscrizione all'Albo degli Psicologi del {alboRegion} n.{" "}
+            Dott.ssa Martina Giovinazzo, Psicologa — Iscrizione all'Albo degli Psicologi del {alboRegion} n.{" "}
             {alboNumber}.
             <br />
             Sede: {studioAddress}
@@ -76,7 +76,7 @@ export default function Privacy() {
               esecuzione del contratto (art. 6.1.b GDPR).
             </li>
             <li>
-              Erogazione della prestazione psicologica/psicoterapeutica e trattamento dei dati sanitari connessi — base
+              Erogazione della prestazione psicologica e trattamento dei dati sanitari connessi — base
               giuridica: finalità di assistenza sanitaria e cura prestate da un professionista soggetto al segreto professionale
               (art. 9.2.h GDPR) e, ove necessario, consenso esplicito dell'Interessato (art. 9.2.a GDPR).
             </li>

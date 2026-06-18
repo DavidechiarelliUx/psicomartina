@@ -32,7 +32,7 @@ export default function AboutPreview() {
             <span className="inline-block text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Chi Sono</span>
             <h2 className="font-heading text-display-sm md:text-display font-semibold text-foreground mb-5">Credo nel potere della relazione terapeutica</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              Sono la Dott.ssa Martina Giovinazzo, psicologa e psicoterapeuta iscritta all'Albo degli Psicologi. Il mio approccio integra tecniche cognitive,
+              Sono la Dott.ssa Martina Giovinazzo, psicologa iscritta all'Albo degli Psicologi. Il mio approccio integra tecniche cognitive,
               relazionali e corporee per offrirti un percorso davvero su misura.
             </p>
             <p className="text-muted-foreground leading-relaxed mb-8">

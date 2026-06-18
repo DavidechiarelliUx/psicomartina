@@ -13,7 +13,7 @@ const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "12345";
 
 const qualifications = [
   "Laurea Magistrale in Psicologia Clinica — Sapienza Università di Roma",
-  "Specializzazione in Psicoterapia Cognitivo-Comportamentale",
+  "Formazione in approcci cognitivo-comportamentali",
   "Formazione EMDR per l'elaborazione dei traumi",
   `Iscritta all'Albo degli Psicologi — n. ${alboNumber}`,
   "Formazione continua in Mindfulness e ACT",
@@ -53,11 +53,11 @@ export default function About() {
               <h1 className="font-heading text-hero-sm md:text-display font-semibold text-foreground mb-6">Dott.ssa Martina Giovinazzo</h1>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  Ciao, sono Martina. Sono psicologa e psicoterapeuta con oltre 10 anni di esperienza clinica. Ho scelto questa professione perché credo
+                  Ciao, sono Martina. Sono psicologa con esperienza clinica. Ho scelto questa professione perché credo
                   profondamente nel potenziale di ogni persona di trasformare la propria sofferenza in crescita.
                 </p>
                 <p>
-                  Il mio approccio è integrativo: unisco tecniche cognitive, relazionali e corporee per costruire un percorso terapeutico realmente su misura.
+                  Il mio approccio è integrativo: unisco tecniche cognitive, relazionali e corporee per costruire un percorso di supporto realmente su misura.
                   Lavoro con adulti che affrontano ansia, difficoltà relazionali, problemi di autostima e traumi.
                 </p>
                 <p>
