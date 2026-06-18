@@ -107,8 +107,8 @@
 
 | Path | Title | Meta description |
 | --- | --- | --- |
-| `/` | Psicologa e Psicoterapeuta a Roma | Scopri un supporto psicologico personalizzato per ansia, relazioni e autostima. Prenota un primo colloquio e inizia il tuo percorso con fiducia. |
-| `/chi-sono` | Chi Sono | Conosci Martina Giovinazzo, psicologa e psicoterapeuta a Roma. Scopri approccio, formazione e valori per scegliere il percorso più adatto a te. |
+| `/` | Psicologa a Roma | Scopri un supporto psicologico personalizzato per ansia, relazioni e autostima. Prenota un primo colloquio e inizia il tuo percorso con fiducia. |
+| `/chi-sono` | Chi Sono | Conosci Martina Giovinazzo, psicologa a Roma. Scopri approccio, formazione e valori per scegliere il percorso più adatto a te. |
 | `/servizi` | Servizi di Psicologia | Scopri i servizi di psicologia per ansia, stress, relazioni, autostima e traumi. Prenota un colloquio per trovare il percorso più adatto a te. |
 | `/come-funziona` | Come Funziona | Scopri come funziona il percorso psicologico, dal primo contatto alle sedute online o in studio. Prenota un colloquio conoscitivo senza impegno. |
 | `/blog` | Blog di Psicologia | Leggi articoli di psicologia su ansia, relazioni, autostima e benessere. Scopri risorse utili per prenderti cura di te ogni giorno con consapevolezza. |
