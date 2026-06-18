@@ -67,6 +67,8 @@ function getInitialForm() {
     notes: "",
     privacy_accepted: false,
     informed_consent_accepted: false,
+    // Honeypot anti-spam: deve restare vuoto. I bot tendono a compilarlo.
+    contact_time_pref: "",
     consent: { ...emptyConsent },
   };
 }
@@ -128,6 +130,11 @@ export default function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Honeypot: se compilato è quasi certamente un bot. Simuliamo successo senza inviare.
+    if (form.contact_time_pref) {
+      setSent(true);
+      return;
+    }
     if (!form.privacy_accepted) {
       toast.error("Devi accettare la privacy policy per procedere.");
       return;
@@ -446,6 +453,17 @@ export default function Contact() {
                       Per la tua tutela, non inserire qui dati sanitari o informazioni cliniche delicate: ne parleremo nel
                       contesto protetto del colloquio.
                     </p>
+                    {/* Campo honeypot anti-spam: invisibile agli utenti, ignorato dagli screen reader. */}
+                    <input
+                      type="text"
+                      name="contact_time_pref"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      value={form.contact_time_pref}
+                      onChange={(e) => update("contact_time_pref", e.target.value)}
+                      style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+                    />
                   </div>
                   <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 md:p-5">
                     <div className="mb-3 flex items-start gap-3">

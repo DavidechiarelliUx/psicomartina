@@ -152,6 +152,29 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function getClientIp(req) {
+  return (
+    (req.headers?.["x-forwarded-for"] || "").split(",")[0].trim() ||
+    req.socket?.remoteAddress ||
+    "unknown"
+  );
+}
+
+// Rate limiter in-memory per i form pubblici (best-effort su serverless, completo su server long-running).
+const publicFormHits = new Map();
+function checkPublicRateLimit(ip, { max = 10, windowMs = 10 * 60 * 1000 } = {}) {
+  const key = ip || "unknown";
+  const now = Date.now();
+  const entry = publicFormHits.get(key);
+  if (!entry || now - entry.first > windowMs) {
+    publicFormHits.set(key, { count: 1, first: now });
+    return true;
+  }
+  if (entry.count >= max) return false;
+  entry.count += 1;
+  return true;
+}
+
 async function readJson(req) {
   if (req.body && typeof req.body === "object") return req.body;
   if (typeof req.body === "string") return req.body ? JSON.parse(req.body) : {};
@@ -695,6 +718,12 @@ async function getDashboard() {
 }
 
 async function createAppointment(payload) {
+  // Honeypot anti-spam: il campo deve restare vuoto. Se valorizzato, scartiamo la richiesta.
+  if (payload.contact_time_pref) {
+    const error = new Error("Richiesta non valida.");
+    error.statusCode = 400;
+    throw error;
+  }
   const serviceType = serviceLabels[payload.service_type] ? payload.service_type : "primo_colloquio";
   const service = await prisma.service.findUnique({ where: { code: serviceType } });
   const email = String(payload.client_email || "").trim().toLowerCase();
@@ -1461,6 +1490,9 @@ export async function handleApiRequest(req, res) {
     }
 
     if (req.method === "POST" && url.pathname === "/api/consents/preview") {
+      if (!checkPublicRateLimit(getClientIp(req), { max: 20 })) {
+        return sendJson(res, 429, { error: "Troppe richieste. Riprova più tardi." });
+      }
       return await sendPreviewConsentPdf(res, await readJson(req));
     }
 
@@ -1582,6 +1614,9 @@ export async function handleApiRequest(req, res) {
     }
 
     if (req.method === "POST" && url.pathname === "/api/appointments") {
+      if (!checkPublicRateLimit(getClientIp(req))) {
+        return sendJson(res, 429, { error: "Troppe richieste. Riprova più tardi." });
+      }
       const payload = await readJson(req);
       const appointment = await createAppointment(payload);
       await sendBookingEmails({
