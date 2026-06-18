@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import CookiePolicy from "./pages/CookiePolicy";
+import LegalNotice from "./pages/LegalNotice";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { ConsentProvider, useAnalyticsConsent } from "@/lib/consent";
 
@@ -45,6 +46,7 @@ const AuthenticatedApp = () => {
         <Route path="/contatti" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/note-legali" element={<LegalNotice />} />
         <Route path="/recensione/:token" element={<ReviewForm />} />
         <Route
           path="/dashboard"

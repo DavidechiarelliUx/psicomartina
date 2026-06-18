@@ -36,6 +36,7 @@ export default function Footer() {
                 { label: "Prenota", path: "/contatti" },
                 { label: "Privacy Policy", path: "/privacy" },
                 { label: "Cookie Policy", path: "/cookie-policy" },
+                { label: "Note Legali", path: "/note-legali" },
               ].map((link) => (
                 <Link key={link.path} to={link.path} className="block text-sm text-background/60 hover:text-secondary transition-colors">
                   {link.label}

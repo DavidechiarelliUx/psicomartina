@@ -442,6 +442,10 @@ export default function Contact() {
                       placeholder="Raccontami brevemente di cosa hai bisogno..."
                       rows={4}
                     />
+                    <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                      Per la tua tutela, non inserire qui dati sanitari o informazioni cliniche delicate: ne parleremo nel
+                      contesto protetto del colloquio.
+                    </p>
                   </div>
                   <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 md:p-5">
                     <div className="mb-3 flex items-start gap-3">
@@ -739,11 +743,10 @@ export default function Contact() {
                   <div className="flex items-start gap-3">
                     <Checkbox id="privacy" checked={form.privacy_accepted} onCheckedChange={(v) => update("privacy_accepted", Boolean(v))} />
                     <Label htmlFor="privacy" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                      Ho letto e accetto la{" "}
-                      <Link to="/privacy" className="underline hover:text-primary">
-                        Privacy Policy
-                      </Link>
-                      . Acconsento al trattamento dei miei dati personali ai sensi del GDPR (Reg. UE 2016/679) per la gestione della richiesta di appuntamento.
+                      Dichiaro di aver letto l'<Link to="/privacy" className="underline hover:text-primary">informativa sulla privacy</Link>{" "}
+                      (artt. 13-14 GDPR — Reg. UE 2016/679) e acconsento al trattamento dei miei dati personali, comprese le
+                      eventuali categorie particolari di dati (art. 9 GDPR) connesse alla prestazione, per la gestione della
+                      richiesta di appuntamento. *
                     </Label>
                   </div>
                   <Button

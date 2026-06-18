@@ -50,6 +50,12 @@ export const seoPages = {
     description:
       "Scopri quali cookie utilizza questo sito, a cosa servono e come gestire o revocare il consenso in qualsiasi momento, nel rispetto del GDPR.",
   },
+  legalNotice: {
+    title: "Note Legali e Termini",
+    path: "/note-legali",
+    description:
+      "Note legali, termini di utilizzo del sito e disclaimer professionale dello studio di psicologia: natura dei contenuti, prenotazioni e gestione delle emergenze.",
+  },
   dashboard: {
     title: "Dashboard",
     path: "/dashboard",
