@@ -21,7 +21,11 @@ import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
 const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
-const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
+const studioAddress = (import.meta.env.VITE_STUDIO_ADDRESS || "").trim();
+const studioAddress2 = (import.meta.env.VITE_STUDIO_ADDRESS_2 || "").trim();
+const studioLocations = [studioAddress, studioAddress2].filter(Boolean);
+const serviceLocationOptions = [...studioLocations, "Online"];
+const defaultServiceLocation = serviceLocationOptions[0] || "Online";
 const studioMapUrl = `https://www.google.com/maps?q=${encodeURIComponent(studioAddress)}&output=embed`;
 
 const emptyConsent = {
@@ -37,7 +41,7 @@ const emptyConsent = {
   residence_number: "",
   service_kind: "consulenza",
   service_other: "",
-  service_location: "Via Tricerro, 100",
+  service_location: defaultServiceLocation,
   minor_full_name: "",
   tutor_full_name: "",
   second_tutor_full_name: "",
@@ -466,19 +470,23 @@ export default function Contact() {
                       <div className="space-y-2 sm:col-span-2">
                         <Label>Sede della prestazione *</Label>
                         <Select
-                          value={["Via Tricerro, 100", "Online"].includes(form.consent.service_location) ? form.consent.service_location : "__altra__"}
+                          value={serviceLocationOptions.includes(form.consent.service_location) ? form.consent.service_location : "__altra__"}
                           onValueChange={(v) => updateConsent("service_location", v === "__altra__" ? "" : v)}
                         >
                           <SelectTrigger className="bg-background">
                             <SelectValue placeholder="Seleziona la sede" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Via Tricerro, 100">In studio (Via Tricerro, 100)</SelectItem>
+                            {studioLocations.map((address, index) => (
+                              <SelectItem key={address} value={address}>
+                                In studio {index + 1} ({address})
+                              </SelectItem>
+                            ))}
                             <SelectItem value="Online">Online</SelectItem>
                             <SelectItem value="__altra__">Altra sede…</SelectItem>
                           </SelectContent>
                         </Select>
-                        {!["Via Tricerro, 100", "Online"].includes(form.consent.service_location) && (
+                        {!serviceLocationOptions.includes(form.consent.service_location) && (
                           <Input
                             value={form.consent.service_location}
                             onChange={(e) => updateConsent("service_location", e.target.value)}

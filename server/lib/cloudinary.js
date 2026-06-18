@@ -50,6 +50,11 @@ export function uploadConsentPdf(buffer, publicId) {
         public_id: publicId,
         resource_type: "raw",
         format: "pdf",
+        // I moduli di consenso contengono dati sanitari e di minori (art. 9 GDPR):
+        // l'asset NON deve essere pubblicamente accessibile. Con type "authenticated"
+        // il file è raggiungibile solo tramite URL firmato a scadenza generato lato server.
+        type: "authenticated",
+        access_mode: "authenticated",
       },
       (error, result) => {
         if (error) reject(error);
@@ -73,7 +78,7 @@ export async function deleteImage(publicId) {
 export async function deleteRawFile(publicId) {
   if (!publicId) return;
   try {
-    await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
+    await cloudinary.uploader.destroy(publicId, { resource_type: "raw", type: "authenticated" });
   } catch (error) {
     console.error("Cloudinary raw delete error:", error);
   }

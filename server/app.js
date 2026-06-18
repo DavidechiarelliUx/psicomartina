@@ -5,7 +5,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { loadEnv } from "./env.js";
-import { createDashboardToken, requireDashboardAuth } from "./lib/auth.js";
+import {
+  createDashboardToken,
+  requireDashboardAuth,
+  verifyDashboardCredentials,
+  checkLoginRateLimit,
+  registerFailedLogin,
+  clearLoginAttempts,
+} from "./lib/auth.js";
 import { deleteImage, deleteRawFile, extractPublicId, uploadBlog, uploadConsentPdf } from "./lib/cloudinary.js";
 import { sendAppointmentConfirmedToClient, sendBookingNotificationToStudio, sendBookingRequestReceivedToClient, sendCustomEmailToClient, sendReviewRequestToClient } from "./lib/mailer.js";
 
@@ -92,6 +99,13 @@ const defaultBookingSchedule = [
   { dayOfWeek: 6, isOpen: false, opensAt: "09:00", closesAt: "19:00", slotMinutes: 60 },
 ];
 
+function getConfiguredServiceLocations() {
+  const studioAddresses = [process.env.VITE_STUDIO_ADDRESS, process.env.VITE_STUDIO_ADDRESS_2]
+    .map((value) => sanitizeText(value))
+    .filter(Boolean);
+  return [...studioAddresses, "Online"];
+}
+
 function slugify(value = "") {
   return String(value)
     .normalize("NFD")
@@ -102,13 +116,39 @@ function slugify(value = "") {
     .slice(0, 80);
 }
 
+function getAllowedOrigins() {
+  // Allowlist configurabile via env (CSV). Default: domini di produzione del sito.
+  const fromEnv = (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+  if (fromEnv.length) return fromEnv;
+  return [
+    "https://psicomartina.it",
+    "https://www.psicomartina.it",
+    "https://psicomartina.vercel.app",
+  ];
+}
+
+// Imposta CORS (con controllo origin) e header di sicurezza su ogni risposta API.
+function applyBaseHeaders(req, res) {
+  const origin = req.headers?.origin;
+  if (origin && getAllowedOrigins().includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Max-Age", "86400");
+  }
+  // Header di sicurezza per le risposte API.
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Cache-Control", "no-store");
+}
+
 function sendJson(res, statusCode, payload) {
-  res.writeHead(statusCode, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  });
+  res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload));
 }
 
@@ -353,7 +393,7 @@ function normalizeConsentPayload(payload, appointmentPayload, options = {}) {
     residenceNumber: sanitizeText(consent.residence_number) || null,
     serviceKind: ["consulenza", "sostegno_psicologico", "altro"].includes(consent.service_kind) ? consent.service_kind : "consulenza",
     serviceOther: sanitizeText(consent.service_other) || null,
-    serviceLocation: sanitizeText(consent.service_location) || "Via Tricerro, 100",
+    serviceLocation: sanitizeText(consent.service_location) || getConfiguredServiceLocations()[0],
     minorFullName: sanitizeText(consent.minor_full_name) || null,
     tutorFullName: sanitizeText(consent.tutor_full_name) || null,
     secondTutorFullName: sanitizeText(consent.second_tutor_full_name) || null,
@@ -520,10 +560,10 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
   check(0, 92, serviceMarkY);
 
   // ----- PAGINA 2: sede della prestazione -----
-  // Copre il default stampato "Via Tricerro, 100" e scrive la sede scelta
+  // Copre la sede precompilata nel template e scrive la sede scelta
   // (studio, online o altra sede).
   cover(1, 137, 100, 388, 14);
-  line(1, consent.serviceLocation || "Via Tricerro, 100", 145, 110.52, { maxChars: 68 });
+  line(1, consent.serviceLocation || getConfiguredServiceLocations()[0], 145, 110.52, { maxChars: 68 });
 
   // ----- PAGINA 2: modalità di pagamento (riga "Il pagamento avverrà ...") -----
   line(1, paymentText, 218, 398.06, { maxChars: 78 });
@@ -1359,6 +1399,8 @@ export async function handleApiRequest(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
+    applyBaseHeaders(req, res);
+
     if (req.method === "OPTIONS") {
       return sendJson(res, 204, {});
     }
@@ -1381,10 +1423,28 @@ export async function handleApiRequest(req, res) {
     }
 
     if (req.method === "POST" && url.pathname === "/api/auth/login") {
+      const clientIp =
+        (req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
+        req.socket?.remoteAddress ||
+        "unknown";
+
+      const rate = checkLoginRateLimit(clientIp);
+      if (!rate.allowed) {
+        res.setHeader?.("Retry-After", String(rate.retryAfter));
+        return sendJson(res, 429, {
+          error: `Troppi tentativi di accesso. Riprova tra ${Math.ceil(rate.retryAfter / 60)} minuti.`,
+        });
+      }
+
       const { username, password } = await readJson(req);
-      if (username === process.env.DASHBOARD_USERNAME && password === process.env.DASHBOARD_PASSWORD) {
+      if (verifyDashboardCredentials(username, password)) {
+        clearLoginAttempts(clientIp);
         return sendJson(res, 200, { token: createDashboardToken(username) });
       }
+
+      registerFailedLogin(clientIp);
+      // Piccolo ritardo per rallentare il brute-force automatizzato.
+      await new Promise((r) => setTimeout(r, 400));
       return sendJson(res, 401, { error: "Credenziali non valide" });
     }
 
@@ -1533,7 +1593,8 @@ export async function handleApiRequest(req, res) {
           url: appointment.consent_pdf_url,
         },
       });
-      const { consent_pdf_buffer, ...responseAppointment } = appointment;
+      // Non esporre al browser del cliente né il buffer né l'URL del consenso (dati sanitari/minori).
+      const { consent_pdf_buffer, consent_pdf_url, consent_pdf_filename, ...responseAppointment } = appointment;
       return sendJson(res, 201, responseAppointment);
     }
 
