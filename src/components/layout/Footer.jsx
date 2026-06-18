@@ -1,8 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { useConsent } from "@/lib/consent";
 
 export default function Footer() {
+  const { openPreferences } = useConsent();
   const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
   const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
   const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
@@ -33,11 +35,19 @@ export default function Footer() {
                 { label: "Blog", path: "/blog" },
                 { label: "Prenota", path: "/contatti" },
                 { label: "Privacy Policy", path: "/privacy" },
+                { label: "Cookie Policy", path: "/cookie-policy" },
               ].map((link) => (
                 <Link key={link.path} to={link.path} className="block text-sm text-background/60 hover:text-secondary transition-colors">
                   {link.label}
                 </Link>
               ))}
+              <button
+                type="button"
+                onClick={openPreferences}
+                className="block text-left text-sm text-background/60 hover:text-secondary transition-colors"
+              >
+                Preferenze cookie
+              </button>
             </div>
           </div>
 

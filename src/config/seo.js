@@ -44,6 +44,12 @@ export const seoPages = {
     description:
       "Leggi la privacy policy dello studio e scopri come vengono trattati dati, richieste di contatto e prenotazioni nel rispetto del GDPR e della riservatezza.",
   },
+  cookiePolicy: {
+    title: "Cookie Policy",
+    path: "/cookie-policy",
+    description:
+      "Scopri quali cookie utilizza questo sito, a cosa servono e come gestire o revocare il consenso in qualsiasi momento, nel rispetto del GDPR.",
+  },
   dashboard: {
     title: "Dashboard",
     path: "/dashboard",

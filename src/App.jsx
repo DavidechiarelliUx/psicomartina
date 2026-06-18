@@ -21,7 +21,15 @@ import ConsentsPage from "./pages/dashboard/ConsentsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
+import CookiePolicy from "./pages/CookiePolicy";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { ConsentProvider, useAnalyticsConsent } from "@/lib/consent";
+
+// Speed Insights viene caricato solo dopo consenso esplicito agli strumenti analitici.
+function AnalyticsGate() {
+  const analyticsAllowed = useAnalyticsConsent();
+  return analyticsAllowed ? <SpeedInsights /> : null;
+}
 
 const AuthenticatedApp = () => {
   return (
@@ -36,6 +44,7 @@ const AuthenticatedApp = () => {
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/contatti" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
         <Route path="/recensione/:token" element={<ReviewForm />} />
         <Route
           path="/dashboard"
@@ -86,13 +95,15 @@ const AuthenticatedApp = () => {
 function App() {
   return (
     <QueryClientProvider client={queryClientInstance}>
-      <Router>
-        <ScrollToTop />
-        <AuthenticatedApp />
-      </Router>
-      <Toaster />
-      <SonnerToaster position="top-center" />
-      <SpeedInsights />
+      <ConsentProvider>
+        <Router>
+          <ScrollToTop />
+          <AuthenticatedApp />
+        </Router>
+        <Toaster />
+        <SonnerToaster position="top-center" />
+        <AnalyticsGate />
+      </ConsentProvider>
     </QueryClientProvider>
   );
 }

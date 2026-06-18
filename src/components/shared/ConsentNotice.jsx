@@ -1,64 +1,116 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { motion, AnimatePresence } from "framer-motion";
 import { Cookie, X } from "lucide-react";
+import { useConsent } from "@/lib/consent";
 
 export default function ConsentNotice() {
-  const [visible, setVisible] = useState(false);
+  const { bannerOpen, consent, acceptAll, rejectAll, save, closeBanner } = useConsent();
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [analytics, setAnalytics] = useState(Boolean(consent?.analytics));
 
-  useEffect(() => {
-    const consent = localStorage.getItem("cookie_consent");
-    if (!consent) {
-      const timer = setTimeout(() => setVisible(true), 1500);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  const accept = () => {
-    localStorage.setItem("cookie_consent", "accepted");
-    setVisible(false);
-  };
-
-  const decline = () => {
-    localStorage.setItem("cookie_consent", "declined");
-    setVisible(false);
+  const openPrefsPanel = () => {
+    setAnalytics(Boolean(consent?.analytics));
+    setShowPrefs(true);
   };
 
   return (
     <AnimatePresence>
-      {visible && (
+      {bannerOpen && (
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: "spring", damping: 25 }}
           className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6"
+          role="dialog"
+          aria-label="Preferenze cookie"
         >
           <div className="max-w-2xl mx-auto bg-card border border-border rounded-2xl shadow-xl p-5 md:p-6">
             <div className="flex items-start gap-4">
               <Cookie className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm text-foreground font-medium mb-1">Questo sito utilizza i cookie</p>
+                <p className="text-sm text-foreground font-medium mb-1">Rispettiamo la tua privacy</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Utilizziamo cookie tecnici e, con il tuo consenso, cookie di analisi per migliorare la tua esperienza. Puoi leggere la nostra{" "}
+                  Usiamo cookie tecnici necessari al funzionamento del sito e, solo con il tuo consenso, cookie analitici e
+                  contenuti di terze parti (es. mappe e statistiche di navigazione). Puoi accettare, rifiutare o scegliere.
+                  Maggiori dettagli nella{" "}
+                  <Link to="/cookie-policy" className="underline hover:text-primary">
+                    Cookie Policy
+                  </Link>{" "}
+                  e nella{" "}
                   <Link to="/privacy" className="underline hover:text-primary">
                     Privacy Policy
-                  </Link>{" "}
-                  per maggiori dettagli.
+                  </Link>
+                  .
                 </p>
-                <div className="flex gap-3 mt-4">
-                  <Button size="sm" onClick={accept} className="bg-primary hover:bg-primary/90 rounded-full px-5 text-xs">
+
+                <AnimatePresence>
+                  {showPrefs && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 space-y-3 border-t border-border pt-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-medium text-foreground">Cookie necessari</p>
+                            <p className="text-[11px] text-muted-foreground">Indispensabili al funzionamento. Sempre attivi.</p>
+                          </div>
+                          <Switch checked disabled aria-label="Cookie necessari (sempre attivi)" />
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-medium text-foreground">Cookie analitici e di terze parti</p>
+                            <p className="text-[11px] text-muted-foreground">
+                              Statistiche di navigazione e contenuti esterni (mappe). Disattivati di default.
+                            </p>
+                          </div>
+                          <Switch checked={analytics} onCheckedChange={setAnalytics} aria-label="Cookie analitici e di terze parti" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <Button size="sm" onClick={acceptAll} className="bg-primary hover:bg-primary/90 rounded-full px-5 text-xs">
                     Accetta tutti
                   </Button>
-                  <Button size="sm" variant="outline" onClick={decline} className="rounded-full px-5 text-xs">
+                  <Button size="sm" variant="outline" onClick={rejectAll} className="rounded-full px-5 text-xs">
                     Solo necessari
                   </Button>
+                  {showPrefs ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => save({ analytics })}
+                      className="rounded-full px-5 text-xs"
+                    >
+                      Salva preferenze
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="ghost" onClick={openPrefsPanel} className="rounded-full px-5 text-xs">
+                      Personalizza
+                    </Button>
+                  )}
                 </div>
               </div>
-              <button onClick={decline} className="text-muted-foreground hover:text-foreground transition-colors">
-                <X className="w-4 h-4" />
-              </button>
+
+              {/* La X chiude il pannello solo se una scelta è già stata salvata in precedenza. */}
+              {consent && (
+                <button
+                  onClick={closeBanner}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Chiudi"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

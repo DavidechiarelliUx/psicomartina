@@ -36,3 +36,4 @@ Preventivo_*.pdf
 
 .env
 .vite
+.vercel
