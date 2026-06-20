@@ -85,25 +85,28 @@ function FeaturedCard({ service: s }) {
 // attraversa al centro, in scorrimento continuo (marquee).
 function InterventionAreasCarousel({ items }) {
   if (!items.length) return null;
+  // Duplichiamo la lista per ottenere uno scorrimento continuo. Il margine è applicato
+  // a OGNI card (anche l'ultima): così -50% corrisponde esattamente a un set e il loop
+  // si ricongiunge senza buchi.
   const loop = [...items, ...items];
 
   return (
-    <div className="relative overflow-hidden py-6">
+    <div className="relative mx-auto max-w-6xl overflow-hidden">
       {/* Linea che passa al centro delle card */}
       <div className="pointer-events-none absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-      {/* Sfumature ai bordi per un effetto morbido in entrata/uscita */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-10 bg-gradient-to-r from-background to-transparent md:w-20" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-10 bg-gradient-to-l from-background to-transparent md:w-20" />
+      {/* Sfumature ai bordi per un'entrata/uscita morbida */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-10 bg-gradient-to-r from-background to-transparent md:w-14" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-10 bg-gradient-to-l from-background to-transparent md:w-14" />
 
       <motion.div
-        className="flex w-max gap-6"
+        className="flex w-max py-6"
         animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: Math.max(18, loop.length * 4), ease: "linear", repeat: Infinity }}
+        transition={{ duration: Math.max(20, items.length * 8), ease: "linear", repeat: Infinity }}
       >
         {loop.map((s, i) => (
           <div
             key={`${s.id}-${i}`}
-            className="relative z-10 w-64 flex-shrink-0 rounded-2xl border border-border bg-card p-6 shadow-sm md:w-72"
+            className="relative z-10 mr-6 w-[78vw] flex-shrink-0 rounded-2xl border border-border bg-card p-6 shadow-sm sm:w-[300px] md:mr-10 lg:w-[340px]"
           >
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-xl">{s.icon || "•"}</div>
             {s.subtitle && <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-accent">{s.subtitle}</p>}
