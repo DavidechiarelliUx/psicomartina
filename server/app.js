@@ -791,6 +791,13 @@ async function createAppointment(payload) {
     throw error;
   }
 
+  const closure = await prisma.bookingClosure.findUnique({ where: { date: new Date(`${payload.date}T00:00:00.000Z`) } });
+  if (closure) {
+    const error = new Error("La data selezionata non è disponibile (giorno di chiusura).");
+    error.statusCode = 400;
+    throw error;
+  }
+
   const confirmedConflict = await prisma.appointment.findFirst({
     where: {
       deletedAt: null,
@@ -930,18 +937,59 @@ async function getPublicAvailability(monthValue, locationInput) {
     return acc;
   }, {});
 
+  // Chiusure straordinarie (valide per tutte le sedi).
+  const closureRows = await prisma.bookingClosure.findMany({
+    where: { date: { gte: start, lt: end } },
+    select: { date: true },
+  });
+  const closures = new Set(closureRows.map((c) => formatDate(c.date)));
+
   const days = {};
   for (let cursor = new Date(start); cursor < end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
     const date = formatDate(cursor);
     const schedule = scheduleByDay.get(cursor.getUTCDay());
+    const isClosed = closures.has(date);
     days[date] = {
-      open: Boolean(schedule?.is_open),
-      slots: schedule?.slots || [],
+      open: Boolean(schedule?.is_open) && !isClosed,
+      closed: isClosed,
+      slots: isClosed ? [] : schedule?.slots || [],
       booked: booked[date] || [],
     };
   }
 
-  return { month, location, booked, days, schedule: schedules };
+  return { month, location, booked, days, closures: [...closures], schedule: schedules };
+}
+
+async function getClosures() {
+  const rows = await prisma.bookingClosure.findMany({ orderBy: { date: "asc" }, select: { date: true, reason: true } });
+  return rows.map((r) => ({ date: formatDate(r.date), reason: r.reason || null }));
+}
+
+async function addClosure(payload) {
+  const date = String(payload?.date || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const error = new Error("Data non valida.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const reason = payload?.reason ? sanitizeText(payload.reason).slice(0, 120) : null;
+  await prisma.bookingClosure.upsert({
+    where: { date: new Date(`${date}T00:00:00.000Z`) },
+    update: { reason },
+    create: { date: new Date(`${date}T00:00:00.000Z`), reason },
+  });
+  return getClosures();
+}
+
+async function removeClosure(dateInput) {
+  const date = String(dateInput || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const error = new Error("Data non valida.");
+    error.statusCode = 400;
+    throw error;
+  }
+  await prisma.bookingClosure.deleteMany({ where: { date: new Date(`${date}T00:00:00.000Z`) } });
+  return getClosures();
 }
 
 async function sendBookingEmails({ payload, appointment, consensoPdf }) {
@@ -1572,6 +1620,13 @@ export async function handleApiRequest(req, res) {
     if (req.method === "PUT" && url.pathname === "/api/booking-schedules") {
       if (!requireDashboardAuth(req, res, sendJson)) return;
       return sendJson(res, 200, { schedules: await updateBookingSchedules(await readJson(req)) });
+    }
+
+    if (url.pathname === "/api/booking-closures") {
+      if (!requireDashboardAuth(req, res, sendJson)) return;
+      if (req.method === "GET") return sendJson(res, 200, { closures: await getClosures() });
+      if (req.method === "POST") return sendJson(res, 201, { closures: await addClosure(await readJson(req)) });
+      if (req.method === "DELETE") return sendJson(res, 200, { closures: await removeClosure(url.searchParams.get("date")) });
     }
 
     if (req.method === "GET" && url.pathname === "/api/bookings/stats") {

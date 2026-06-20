@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, CheckCircle2, Save } from "lucide-react";
+import { CalendarClock, CheckCircle2, Save, CalendarX, Plus, Trash2 } from "lucide-react";
 import { apiFetch } from "@/api/client";
 import { LOCATIONS, DEFAULT_LOCATION } from "@/config/locations";
 
@@ -24,6 +24,35 @@ export default function BookingHoursSettings() {
   const [general, setGeneral] = useState({ opens_at: "09:00", closes_at: "19:00", slot_minutes: 60 });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+  const [newClosure, setNewClosure] = useState("");
+
+  const { data: closuresData } = useQuery({
+    queryKey: ["booking-closures"],
+    queryFn: () => apiFetch("/api/booking-closures"),
+  });
+  const closures = closuresData?.closures || [];
+
+  const addClosure = async () => {
+    if (!newClosure) return;
+    try {
+      await apiFetch("/api/booking-closures", { method: "POST", body: JSON.stringify({ date: newClosure }) });
+      setNewClosure("");
+      queryClient.invalidateQueries({ queryKey: ["booking-closures"] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey?.[0] === "availability" });
+    } catch (error) {
+      setStatus(error.message || "Errore durante l'aggiunta della chiusura.");
+    }
+  };
+
+  const removeClosure = async (date) => {
+    try {
+      await apiFetch(`/api/booking-closures?date=${encodeURIComponent(date)}`, { method: "DELETE" });
+      queryClient.invalidateQueries({ queryKey: ["booking-closures"] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey?.[0] === "availability" });
+    } catch (error) {
+      setStatus(error.message || "Errore durante la rimozione della chiusura.");
+    }
+  };
 
   useEffect(() => {
     if (data?.schedules?.length) {
@@ -157,6 +186,48 @@ export default function BookingHoursSettings() {
             </label>
           </div>
         ))}
+      </div>
+
+      <div className="mt-6 rounded-xl border border-border bg-background p-4">
+        <div className="mb-3 flex items-center gap-2 text-primary">
+          <CalendarX className="h-4 w-4" />
+          <p className="text-sm font-semibold text-foreground">Chiusure straordinarie</p>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Chiudi un giorno specifico (ferie, festività, imprevisti). Vale per tutte le sedi e nasconde quel giorno dal calendario di prenotazione.
+        </p>
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="block text-xs font-medium text-muted-foreground">
+            Giorno da chiudere
+            <input
+              type="date"
+              value={newClosure}
+              onChange={(event) => setNewClosure(event.target.value)}
+              className="mt-1 block rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={addClosure}
+            disabled={!newClosure}
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" /> Aggiungi
+          </button>
+        </div>
+
+        {closures.length > 0 && (
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {closures.map((c) => (
+              <li key={c.date} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground">
+                {new Date(`${c.date}T12:00:00`).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
+                <button type="button" onClick={() => removeClosure(c.date)} className="text-muted-foreground hover:text-destructive" aria-label="Rimuovi chiusura">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {status && (

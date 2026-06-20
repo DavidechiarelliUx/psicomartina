@@ -179,6 +179,15 @@ model CookieConsentLog {
   @@map("cookie_consent_logs")
 }
 
+model BookingClosure {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  date      DateTime @unique @db.Date
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("booking_closures")
+}
+
 model BookingSchedule {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   location     String   @default("sede1")
