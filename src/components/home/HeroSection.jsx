@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
-const HERO_IMG = "/images/martina_giovinazzo.png";
+const HERO_IMG = "https://res.cloudinary.com/damrrcxs5/image/upload/f_auto,q_auto/v1781955077/psicomartina/site/martina-giovinazzo.jpg";
 
 export default function HeroSection() {
   return (

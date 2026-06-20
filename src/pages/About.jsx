@@ -7,7 +7,7 @@ import { Calendar, GraduationCap, Heart, Shield, Lightbulb } from "lucide-react"
 import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
 
-const ABOUT_IMG = "/images/martina_giovinazzo.png";
+const ABOUT_IMG = "https://res.cloudinary.com/damrrcxs5/image/upload/f_auto,q_auto/v1781955077/psicomartina/site/martina-giovinazzo.jpg";
 const OFFICE_IMG = "/images/studio.png";
 const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "32977";
 const alboRegion = import.meta.env.VITE_STUDIO_ALBO_REGION || "Lazio";
