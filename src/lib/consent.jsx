@@ -34,7 +34,7 @@ export function ConsentProvider({ children }) {
     setBannerOpen(true);
   }, []);
 
-  const save = useCallback((categories) => {
+  const save = useCallback((categories, choice = "custom") => {
     const value = {
       necessary: true,
       analytics: Boolean(categories.analytics),
@@ -46,12 +46,23 @@ export function ConsentProvider({ children }) {
     } catch {
       /* ignora errori di storage */
     }
+    // Registra la scelta lato server come prova del consenso (fire-and-forget).
+    try {
+      fetch("/api/cookie-consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ choice, analytics: value.analytics, policyVersion: CONSENT_VERSION }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {
+      /* non bloccare l'utente se la registrazione fallisce */
+    }
     setConsentState(value);
     setBannerOpen(false);
   }, []);
 
-  const acceptAll = useCallback(() => save({ analytics: true }), [save]);
-  const rejectAll = useCallback(() => save({ analytics: false }), [save]);
+  const acceptAll = useCallback(() => save({ analytics: true }, "accept_all"), [save]);
+  const rejectAll = useCallback(() => save({ analytics: false }, "reject_all"), [save]);
   const openPreferences = useCallback(() => setBannerOpen(true), []);
   const closeBanner = useCallback(() => setBannerOpen(false), []);
 

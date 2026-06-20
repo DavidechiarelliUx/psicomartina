@@ -1,6 +1,7 @@
 import prismaPkg from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -173,6 +174,30 @@ function checkPublicRateLimit(ip, { max = 10, windowMs = 10 * 60 * 1000 } = {}) 
   if (entry.count >= max) return false;
   entry.count += 1;
   return true;
+}
+
+// Registro dei consensi cookie: salva la scelta come prova (GDPR). L'IP non viene
+// memorizzato in chiaro ma come hash (pseudonimizzazione), per minimizzazione dei dati.
+async function recordCookieConsent(body, req) {
+  const allowed = new Set(["accept_all", "reject_all", "custom"]);
+  const choice = allowed.has(body?.choice) ? body.choice : "custom";
+  const ip = getClientIp(req);
+  const ipHash = ip && ip !== "unknown" ? createHash("sha256").update(ip).digest("hex").slice(0, 32) : null;
+  const userAgent = String(req.headers?.["user-agent"] || "").slice(0, 255) || null;
+  try {
+    await prisma.cookieConsentLog.create({
+      data: {
+        choice,
+        analytics: Boolean(body?.analytics),
+        policyVersion: Number(body?.policyVersion) || 1,
+        userAgent,
+        ipHash,
+      },
+    });
+  } catch (error) {
+    // Non bloccare l'esperienza utente se il log fallisce.
+    console.error("Cookie consent log error:", error?.message || error);
+  }
 }
 
 async function readJson(req) {
@@ -1487,6 +1512,15 @@ export async function handleApiRequest(req, res) {
       const downloadId = url.searchParams.get("download");
       if (downloadId) return sendGeneratedConsentPdf(res, downloadId);
       return sendJson(res, 200, { consents: await getInformedConsents(url.searchParams.get("q") || "") });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/cookie-consent") {
+      if (!checkPublicRateLimit(getClientIp(req), { max: 30 })) {
+        return sendJson(res, 429, { error: "Troppe richieste." });
+      }
+      const body = await readJson(req);
+      await recordCookieConsent(body, req);
+      return sendJson(res, 201, { ok: true });
     }
 
     if (req.method === "POST" && url.pathname === "/api/consents/preview") {

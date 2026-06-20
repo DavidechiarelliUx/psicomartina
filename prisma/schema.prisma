@@ -165,6 +165,19 @@ model InformedConsent {
   @@map("informed_consents")
 }
 
+model CookieConsentLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  choice       String   // "accept_all" | "reject_all" | "custom"
+  analytics    Boolean  @default(false)
+  policyVersion Int     @default(1) @map("policy_version")
+  userAgent    String?  @map("user_agent")
+  ipHash       String?  @map("ip_hash")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([createdAt])
+  @@map("cookie_consent_logs")
+}
+
 model BookingSchedule {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   dayOfWeek    Int      @unique @map("day_of_week")
