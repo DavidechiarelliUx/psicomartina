@@ -100,6 +100,21 @@ const defaultBookingSchedule = [
   { dayOfWeek: 6, isOpen: false, opensAt: "09:00", closesAt: "19:00", slotMinutes: 60 },
 ];
 
+// Sedi gestibili (codici stabili). Le etichette sono mappate lato frontend dalle env.
+const VALID_LOCATIONS = ["sede1", "sede2", "online"];
+const DEFAULT_LOCATION = "sede1";
+
+function normalizeLocation(loc) {
+  return VALID_LOCATIONS.includes(loc) ? loc : DEFAULT_LOCATION;
+}
+
+// Default per sede: la sede principale è aperta Lun-Ven; le altre sono chiuse
+// finché l'amministratore non le configura.
+function defaultBookingScheduleFor(location) {
+  if (location === DEFAULT_LOCATION) return defaultBookingSchedule;
+  return defaultBookingSchedule.map((day) => ({ ...day, isOpen: false }));
+}
+
 function getConfiguredServiceLocations() {
   const studioAddresses = [process.env.VITE_STUDIO_ADDRESS, process.env.VITE_STUDIO_ADDRESS_2]
     .map((value) => sanitizeText(value))
@@ -274,8 +289,9 @@ function generateTimeSlots(schedule) {
   return slots;
 }
 
-function mapBookingSchedule(schedule) {
+function mapBookingSchedule(schedule, location) {
   return {
+    location: schedule.location || location || DEFAULT_LOCATION,
     day_of_week: schedule.dayOfWeek,
     is_open: schedule.isOpen,
     opens_at: schedule.opensAt,
@@ -285,17 +301,20 @@ function mapBookingSchedule(schedule) {
   };
 }
 
-async function getBookingSchedules() {
-  const rows = await prisma.bookingSchedule.findMany({ orderBy: { dayOfWeek: "asc" } });
+async function getBookingSchedules(locationInput) {
+  const location = normalizeLocation(locationInput);
+  const rows = await prisma.bookingSchedule.findMany({ where: { location }, orderBy: { dayOfWeek: "asc" } });
   const byDay = new Map(rows.map((row) => [row.dayOfWeek, row]));
-  return defaultBookingSchedule.map((fallback) => mapBookingSchedule(byDay.get(fallback.dayOfWeek) || fallback));
+  return defaultBookingScheduleFor(location).map((fallback) => mapBookingSchedule(byDay.get(fallback.dayOfWeek) || fallback, location));
 }
 
 async function updateBookingSchedules(payload) {
+  const location = normalizeLocation(payload?.location);
   const schedules = Array.isArray(payload?.schedules) ? payload.schedules : [];
   const validDays = new Set([0, 1, 2, 3, 4, 5, 6]);
   const updates = schedules
     .map((item) => ({
+      location,
       dayOfWeek: Number(item.day_of_week),
       isOpen: Boolean(item.is_open),
       opensAt: String(item.opens_at || "09:00"),
@@ -313,14 +332,14 @@ async function updateBookingSchedules(payload) {
   await prisma.$transaction(
     updates.map((item) =>
       prisma.bookingSchedule.upsert({
-        where: { dayOfWeek: item.dayOfWeek },
+        where: { location_dayOfWeek: { location: item.location, dayOfWeek: item.dayOfWeek } },
         update: item,
         create: item,
       })
     )
   );
 
-  return getBookingSchedules();
+  return getBookingSchedules(location);
 }
 
 function splitFullName(fullName) {
@@ -761,6 +780,17 @@ async function createAppointment(payload) {
     throw error;
   }
 
+  // La sede selezionata dev'essere aperta in quel giorno e lo slot dev'essere valido per essa.
+  const location = normalizeLocation(payload.location);
+  const locationSchedules = await getBookingSchedules(location);
+  const weekday = new Date(`${payload.date}T00:00:00.000Z`).getUTCDay();
+  const daySchedule = locationSchedules.find((s) => s.day_of_week === weekday);
+  if (!daySchedule || !daySchedule.is_open || !daySchedule.slots.includes(payload.time_slot)) {
+    const error = new Error("La sede selezionata non è disponibile in questo giorno o orario.");
+    error.statusCode = 400;
+    throw error;
+  }
+
   const confirmedConflict = await prisma.appointment.findFirst({
     where: {
       deletedAt: null,
@@ -803,6 +833,7 @@ async function createAppointment(payload) {
           serviceType,
           scheduledDate: new Date(`${payload.date}T00:00:00.000Z`),
           timeSlot: payload.time_slot,
+          location,
           status: "pending",
           notes: payload.notes || null,
           privacyAccepted: true,
@@ -874,12 +905,14 @@ async function createAppointment(payload) {
   };
 }
 
-async function getPublicAvailability(monthValue) {
+async function getPublicAvailability(monthValue, locationInput) {
   const month = /^\d{4}-\d{2}$/.test(monthValue || "") ? monthValue : new Date().toISOString().slice(0, 7);
+  const location = normalizeLocation(locationInput);
   const [year, monthIndex] = month.split("-").map(Number);
   const start = new Date(Date.UTC(year, monthIndex - 1, 1));
   const end = new Date(Date.UTC(year, monthIndex, 1));
-  const schedules = await getBookingSchedules();
+  // Orari della SEDE selezionata; gli slot prenotati sono GLOBALI (una sola professionista).
+  const schedules = await getBookingSchedules(location);
   const scheduleByDay = new Map(schedules.map((schedule) => [schedule.day_of_week, schedule]));
   const appointments = await prisma.appointment.findMany({
     where: {
@@ -908,7 +941,7 @@ async function getPublicAvailability(monthValue) {
     };
   }
 
-  return { month, booked, days, schedule: schedules };
+  return { month, location, booked, days, schedule: schedules };
 }
 
 async function sendBookingEmails({ payload, appointment, consensoPdf }) {
@@ -1465,7 +1498,7 @@ export async function handleApiRequest(req, res) {
     }
 
     if (req.method === "GET" && url.pathname === "/api/availability") {
-      return sendJson(res, 200, await getPublicAvailability(url.searchParams.get("month")));
+      return sendJson(res, 200, await getPublicAvailability(url.searchParams.get("month"), url.searchParams.get("location")));
     }
 
     const publicReviewMatch = url.pathname.match(/^\/api\/reviews\/([^/]+)$/);
@@ -1532,7 +1565,8 @@ export async function handleApiRequest(req, res) {
 
     if (req.method === "GET" && url.pathname === "/api/booking-schedules") {
       if (!requireDashboardAuth(req, res, sendJson)) return;
-      return sendJson(res, 200, { schedules: await getBookingSchedules() });
+      const location = url.searchParams.get("location");
+      return sendJson(res, 200, { location: normalizeLocation(location), schedules: await getBookingSchedules(location) });
     }
 
     if (req.method === "PUT" && url.pathname === "/api/booking-schedules") {

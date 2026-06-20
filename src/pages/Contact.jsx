@@ -19,6 +19,7 @@ import { apiFetch } from "@/api/client";
 import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
 import { useConsent, useAnalyticsConsent } from "@/lib/consent";
+import { LOCATIONS, DEFAULT_LOCATION, locationLabel } from "@/config/locations";
 
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
 const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
@@ -60,6 +61,7 @@ function getInitialForm() {
     client_name: "",
     client_email: "",
     client_phone: "",
+    location: DEFAULT_LOCATION,
     date: "",
     time_slot: "",
     service_type: "",
@@ -112,8 +114,8 @@ export default function Contact() {
   const [sent, setSent] = useState(false);
   const monthKey = format(visibleMonth, "yyyy-MM");
   const { data: availability, isFetching: availabilityLoading } = useQuery({
-    queryKey: ["availability", monthKey],
-    queryFn: () => apiFetch(`/api/availability?month=${monthKey}`),
+    queryKey: ["availability", monthKey, form.location],
+    queryFn: () => apiFetch(`/api/availability?month=${monthKey}&location=${encodeURIComponent(form.location)}`),
   });
   const bookedSlots = availability?.booked || {};
   const selectedDay = form.date ? availability?.days?.[form.date] : null;
@@ -380,6 +382,37 @@ export default function Contact() {
                       </Select>
                     </div>
                   </div>
+                  {LOCATIONS.length > 1 && (
+                    <div className="space-y-2">
+                      <Label>Sede *</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {LOCATIONS.map((loc) => {
+                          const active = form.location === loc.code;
+                          return (
+                            <button
+                              key={loc.code}
+                              type="button"
+                              onClick={() =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  location: loc.code,
+                                  date: "",
+                                  time_slot: "",
+                                  consent: { ...prev.consent, service_location: locationLabel(loc.code) },
+                                }))
+                              }
+                              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                                active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-muted"
+                              }`}
+                            >
+                              {loc.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-muted-foreground">La disponibilità mostrata dipende dalla sede scelta.</p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.85fr)]">
                     <div className="space-y-2">
                       <Label>Data preferita *</Label>

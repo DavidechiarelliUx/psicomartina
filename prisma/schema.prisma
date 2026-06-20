@@ -94,6 +94,7 @@ model Appointment {
   serviceType     ServiceType       @default(primo_colloquio) @map("service_type")
   scheduledDate   DateTime          @map("scheduled_date") @db.Date
   timeSlot        String            @map("time_slot")
+  location        String?
   status          AppointmentStatus @default(pending)
   notes           String?
   privacyAccepted Boolean           @default(false) @map("privacy_accepted")
@@ -180,7 +181,8 @@ model CookieConsentLog {
 
 model BookingSchedule {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  dayOfWeek    Int      @unique @map("day_of_week")
+  location     String   @default("sede1")
+  dayOfWeek    Int      @map("day_of_week")
   isOpen       Boolean  @default(true) @map("is_open")
   opensAt      String   @default("09:00") @map("opens_at")
   closesAt     String   @default("19:00") @map("closes_at")
@@ -188,7 +190,8 @@ model BookingSchedule {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@index([dayOfWeek])
+  @@unique([location, dayOfWeek])
+  @@index([location, dayOfWeek])
   @@map("booking_schedules")
 }
 

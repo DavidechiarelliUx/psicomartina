@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, CheckCircle2, Save } from "lucide-react";
 import { apiFetch } from "@/api/client";
+import { LOCATIONS, DEFAULT_LOCATION } from "@/config/locations";
 
 const DAYS = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
 const DEFAULT_SCHEDULES = DAYS.map((_, day) => ({
@@ -14,9 +15,10 @@ const DEFAULT_SCHEDULES = DAYS.map((_, day) => ({
 
 export default function BookingHoursSettings() {
   const queryClient = useQueryClient();
+  const [location, setLocation] = useState(DEFAULT_LOCATION);
   const { data, isLoading } = useQuery({
-    queryKey: ["booking-schedules"],
-    queryFn: () => apiFetch("/api/booking-schedules"),
+    queryKey: ["booking-schedules", location],
+    queryFn: () => apiFetch(`/api/booking-schedules?location=${encodeURIComponent(location)}`),
   });
   const [schedules, setSchedules] = useState(DEFAULT_SCHEDULES);
   const [general, setGeneral] = useState({ opens_at: "09:00", closes_at: "19:00", slot_minutes: 60 });
@@ -49,7 +51,7 @@ export default function BookingHoursSettings() {
     try {
       await apiFetch("/api/booking-schedules", {
         method: "PUT",
-        body: JSON.stringify({ schedules }),
+        body: JSON.stringify({ location, schedules }),
       });
       setStatus("Orari salvati.");
       queryClient.invalidateQueries({ queryKey: ["booking-schedules"] });
@@ -82,6 +84,26 @@ export default function BookingHoursSettings() {
           {saving ? "Salvataggio..." : "Salva orari"}
         </button>
       </div>
+
+      {LOCATIONS.length > 1 && (
+        <div className="mb-5 flex flex-wrap gap-2">
+          {LOCATIONS.map((loc) => (
+            <button
+              key={loc.code}
+              type="button"
+              onClick={() => {
+                setStatus("");
+                setLocation(loc.code);
+              }}
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                location === loc.code ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:bg-muted"
+              }`}
+            >
+              {loc.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mb-5 rounded-xl border border-border bg-background p-4">
         <p className="mb-3 text-sm font-semibold text-foreground">Orario generale</p>
