@@ -42,9 +42,8 @@ export default function Privacy() {
 
           <h2>2. Responsabile della Protezione dei Dati (DPO)</h2>
           <p>
-            Il Titolare non è tenuto alla nomina di un Responsabile della Protezione dei Dati. <strong>[Se nominato, indicare qui
-            nome e contatti del DPO; in caso contrario questa sezione può essere rimossa.]</strong> Per ogni richiesta in materia
-            di privacy è possibile rivolgersi direttamente al Titolare ai recapiti sopra indicati.
+            Il Titolare non è tenuto alla nomina di un Responsabile della Protezione dei Dati. Per ogni richiesta in materia di
+            privacy è possibile rivolgersi direttamente al Titolare ai recapiti sopra indicati.
           </p>
 
           <h2>3. Tipologie di dati trattati</h2>
@@ -121,8 +120,8 @@ export default function Privacy() {
               riservato e dei contenuti multimediali del sito.
             </li>
             <li>
-              <strong>Fornitore di posta elettronica/SMTP</strong> — invio delle email transazionali (conferme, comunicazioni di
-              servizio). <strong>[DA INSERIRE: nome del provider email utilizzato]</strong>.
+              <strong>Google Ireland Ltd. / Google LLC (servizio Gmail/SMTP)</strong> — invio delle email transazionali
+              (conferme di prenotazione e comunicazioni di servizio).
             </li>
             <li>
               <strong>Google Ireland Ltd.</strong> — visualizzazione facoltativa della mappa dello studio (Google Maps), attivata
@@ -149,8 +148,8 @@ export default function Privacy() {
             </li>
             <li>
               Documentazione clinica e dati sanitari connessi alla prestazione professionale: conservati secondo gli obblighi di
-              legge e le indicazioni deontologiche applicabili agli psicologi. <strong>[DA CONFERMARE con il proprio consulente
-              il termine specifico applicabile, di norma alcuni anni dalla conclusione del rapporto.]</strong>
+              legge e le indicazioni deontologiche applicabili agli psicologi e, di norma, per almeno 5 anni dalla conclusione
+              del rapporto professionale.
             </li>
             <li>Documenti contabili e fiscali: conservati per 10 anni come previsto dalla normativa fiscale.</li>
           </ul>

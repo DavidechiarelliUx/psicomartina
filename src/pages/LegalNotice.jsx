@@ -59,8 +59,8 @@ export default function LegalNotice() {
           <h2>4. Prenotazioni, appuntamenti e disdette</h2>
           <p>
             La richiesta di appuntamento inviata tramite il sito costituisce una proposta che si perfeziona solo con la conferma
-            da parte dello studio. Per disdette o riprogrammazioni si invita a dare comunicazione con ragionevole anticipo ai
-            recapiti indicati. <strong>[DA PERSONALIZZARE: eventuale policy di disdetta, preavviso minimo ed eventuali costi.]</strong>
+            da parte dello studio. Per disdette o riprogrammazioni si invita a dare comunicazione con almeno 24 ore di anticipo
+            ai recapiti indicati, così da consentire una migliore organizzazione dell'agenda.
           </p>
 
           <h2>5. Proprietà intellettuale</h2>
