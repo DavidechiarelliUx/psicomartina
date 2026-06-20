@@ -37,6 +37,22 @@ export default function CookiePolicy() {
             questi rientra la memorizzazione locale della tua preferenza sui cookie (chiave <code>cookie_consent_v2</code>) e,
             durante la navigazione autenticata dell'area riservata, il token di sessione.
           </p>
+          <p>Rientrano tra i servizi tecnici/funzionali necessari al funzionamento del sito anche:</p>
+          <ul>
+            <li>
+              <strong>Vercel</strong> — hosting e distribuzione del sito (CDN). Fornitore: Vercel Inc. (USA).{" "}
+              <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Informativa</a>.
+            </li>
+            <li>
+              <strong>Cloudinary</strong> — distribuzione di immagini e contenuti multimediali. Fornitore: Cloudinary Ltd.{" "}
+              <a href="https://cloudinary.com/privacy" target="_blank" rel="noopener noreferrer">Informativa</a>.
+            </li>
+            <li>
+              <strong>Google Fonts</strong> — caricamento dei font tipografici del sito. Comporta una connessione ai server di
+              Google, con possibile trasferimento dell'indirizzo IP. Fornitore: Google Ireland Ltd. / Google LLC (USA).{" "}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Informativa</a>.
+            </li>
+          </ul>
 
           <h3>2. Cookie analitici e contenuti di terze parti (facoltativi)</h3>
           <p>
@@ -45,12 +61,14 @@ export default function CookiePolicy() {
           <ul>
             <li>
               <strong>Vercel Speed Insights</strong> — statistiche aggregate sulle prestazioni e sull'esperienza di navigazione.
-              Fornitore: Vercel Inc. (USA). Finalità: misurazione e miglioramento delle performance.
+              Fornitore: Vercel Inc. (USA). Finalità: misurazione e miglioramento delle performance.{" "}
+              <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Informativa</a>.
             </li>
             <li>
               <strong>Google Maps</strong> — mappa interattiva per individuare lo studio, mostrata nella pagina Contatti.
               L'incorporamento della mappa comporta una connessione ai server di Google, che può installare cookie propri.
-              Fornitore: Google Ireland Ltd. / Google LLC (USA).
+              Fornitore: Google Ireland Ltd. / Google LLC (USA).{" "}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Informativa</a>.
             </li>
           </ul>
           <p>

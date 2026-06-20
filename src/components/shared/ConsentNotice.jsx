@@ -78,11 +78,12 @@ export default function ConsentNotice() {
                 </AnimatePresence>
 
                 <div className="flex flex-wrap gap-3 mt-4">
-                  <Button size="sm" onClick={acceptAll} className="bg-primary hover:bg-primary/90 rounded-full px-5 text-xs">
+                  {/* Accetta e Rifiuta hanno lo STESSO risalto grafico (pari prominenza, no nudging). */}
+                  <Button size="sm" onClick={acceptAll} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5 text-xs">
                     Accetta tutti
                   </Button>
-                  <Button size="sm" variant="outline" onClick={rejectAll} className="rounded-full px-5 text-xs">
-                    Solo necessari
+                  <Button size="sm" onClick={rejectAll} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5 text-xs">
+                    Rifiuta tutti
                   </Button>
                   {showPrefs ? (
                     <Button
