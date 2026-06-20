@@ -5,9 +5,9 @@ import { getCanonicalUrl, seoPages } from "@/config/seo";
 
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
 const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
-const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
-const studioVat = import.meta.env.VITE_STUDIO_VAT || "12345678901";
-const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "12345";
+const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Tricerro 100, Roma";
+const studioVat = import.meta.env.VITE_STUDIO_VAT || "18477451001";
+const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "32977";
 const alboRegion = import.meta.env.VITE_STUDIO_ALBO_REGION || "Lazio";
 
 export default function LegalNotice() {

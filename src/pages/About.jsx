@@ -7,16 +7,16 @@ import { Calendar, GraduationCap, Heart, Shield, Lightbulb } from "lucide-react"
 import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
 
-const ABOUT_IMG = "/images/dott4-3.png";
+const ABOUT_IMG = "/images/martina_giovinazzo.png";
 const OFFICE_IMG = "/images/studio.png";
-const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "12345";
+const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "32977";
+const alboRegion = import.meta.env.VITE_STUDIO_ALBO_REGION || "Lazio";
 
 const qualifications = [
-  "Laurea Magistrale in Psicologia Clinica — Sapienza Università di Roma",
-  "Formazione in approcci cognitivo-comportamentali",
-  "Formazione EMDR per l'elaborazione dei traumi",
-  `Iscritta all'Albo degli Psicologi — n. ${alboNumber}`,
-  "Formazione continua in Mindfulness e ACT",
+  `Psicologa — iscritta all'Albo degli Psicologi del ${alboRegion} n. ${alboNumber}`,
+  "Scuola di specializzazione in psicoterapia cognitivo-comportamentale APC-SPC di Roma (in corso)",
+  "Laurea Magistrale in Psicologia Clinica e della Riabilitazione — Università degli Studi Niccolò Cusano",
+  "Laurea Triennale in Scienze e Tecniche Psicologiche — Università degli Studi Niccolò Cusano",
 ];
 
 const values = [
@@ -53,16 +53,28 @@ export default function About() {
               <h1 className="font-heading text-hero-sm md:text-display font-semibold text-foreground mb-6">Dott.ssa Martina Giovinazzo</h1>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  Ciao, sono Martina. Sono psicologa con esperienza clinica. Ho scelto questa professione perché credo
-                  profondamente nel potenziale di ogni persona di trasformare la propria sofferenza in crescita.
+                  Mi chiamo Martina e sono una psicologa. Ho svolto la mia formazione a Roma, dove ho conseguito la laurea in
+                  Psicologia, e continuo a vivere e lavorare in questa città. Attualmente sono iscritta alla scuola di
+                  specializzazione in psicoterapia cognitivo-comportamentale APC SPC.
                 </p>
                 <p>
-                  Il mio approccio è integrativo: unisco tecniche cognitive, relazionali e corporee per costruire un percorso di supporto realmente su misura.
-                  Lavoro con adulti che affrontano ansia, difficoltà relazionali, problemi di autostima e traumi.
+                  Nel mio lavoro mi occupo di supporto psicologico rivolto a bambini, adolescenti e adulti, sia in presenza a
+                  Roma sia online. Il mio obiettivo è offrire uno spazio di ascolto sicuro, accogliente e non giudicante, in cui
+                  sia possibile esplorare difficoltà emotive, relazionali e momenti di cambiamento personale.
                 </p>
                 <p>
-                  Fuori dallo studio amo camminare nella natura, leggere e praticare yoga — attività che mi aiutano a restare centrata e presente, anche nel mio
-                  lavoro.
+                  L'approccio cognitivo-comportamentale che guida il mio lavoro si basa sull'integrazione tra pensieri, emozioni
+                  e comportamenti, e permette di individuare strumenti concreti ed efficaci per affrontare le difficoltà
+                  quotidiane e promuovere il benessere psicologico.
+                </p>
+                <p>
+                  Ho scelto di intraprendere questa professione perché credo nel valore della relazione terapeutica come
+                  elemento centrale del cambiamento. Ritengo che ogni persona abbia dentro di sé le risorse per affrontare le
+                  proprie difficoltà, e il mio ruolo è quello di accompagnarla nel riconoscerle e valorizzarle.
+                </p>
+                <p>
+                  Nella vita personale amo la musica e viaggiare, due passioni che mi permettono di entrare in contatto con
+                  mondi, emozioni e prospettive diverse, arricchendo anche il mio modo di essere e di lavorare.
                 </p>
               </div>
             </motion.div>

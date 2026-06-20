@@ -27,7 +27,6 @@ const studioAddress2 = (import.meta.env.VITE_STUDIO_ADDRESS_2 || "").trim();
 const studioLocations = [studioAddress, studioAddress2].filter(Boolean);
 const serviceLocationOptions = [...studioLocations, "Online"];
 const defaultServiceLocation = serviceLocationOptions[0] || "Online";
-const studioMapUrl = `https://www.google.com/maps?q=${encodeURIComponent(studioAddress)}&output=embed`;
 
 const emptyConsent = {
   subject_type: "adult",
@@ -283,9 +282,11 @@ export default function Contact() {
                   </a>
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-foreground">Studio</p>
-                      <p>{studioAddress}</p>
+                    <div className="space-y-1">
+                      <p className="font-medium text-foreground">{studioLocations.length > 1 ? "Sedi" : "Studio"}</p>
+                      {studioLocations.map((address) => (
+                        <p key={address}>{address}</p>
+                      ))}
                     </div>
                   </div>
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
@@ -306,13 +307,17 @@ export default function Contact() {
                 </p>
               </div>
 
-              <div className="overflow-hidden rounded-2xl border border-border bg-card">
-                <div className="p-4">
-                  <p className="font-heading text-lg font-semibold text-foreground">Dove ricevo</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{studioAddress}</p>
+              {studioLocations.map((address, index) => (
+                <div key={address} className="overflow-hidden rounded-2xl border border-border bg-card">
+                  <div className="p-4">
+                    <p className="font-heading text-lg font-semibold text-foreground">
+                      {studioLocations.length > 1 ? `Sede ${index + 1}` : "Dove ricevo"}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">{address}</p>
+                  </div>
+                  <StudioMap mapUrl={`https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`} />
                 </div>
-                <StudioMap mapUrl={studioMapUrl} />
-              </div>
+              ))}
             </div>
 
             {/* Form */}

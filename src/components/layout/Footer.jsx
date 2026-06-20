@@ -7,9 +7,11 @@ export default function Footer() {
   const { openPreferences } = useConsent();
   const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
   const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
-  const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Cairo Montenotte 55, Roma";
-  const studioVat = import.meta.env.VITE_STUDIO_VAT || "12345678901";
-  const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "12345";
+  const studioAddress = import.meta.env.VITE_STUDIO_ADDRESS || "Via Tricerro 100, Roma";
+  const studioAddress2 = import.meta.env.VITE_STUDIO_ADDRESS_2;
+  const legalAddress = import.meta.env.VITE_STUDIO_LEGAL_ADDRESS;
+  const studioVat = import.meta.env.VITE_STUDIO_VAT || "18477451001";
+  const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "32977";
   const alboRegion = import.meta.env.VITE_STUDIO_ALBO_REGION || "Lazio";
 
   return (
@@ -17,12 +19,15 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3">
               <img src="/images/logo_bianco_senza_sfondo.png" alt="Logo Dott.ssa Martina Giovinazzo" className="w-8 h-8" />
-              <span className="font-heading text-xl font-semibold text-background">Dott.ssa Giovinazzo</span>
+              <span className="font-heading text-xl font-semibold text-background">Dott.ssa Martina Giovinazzo</span>
             </div>
-            <p className="text-background/60 text-sm leading-relaxed max-w-xs">
-              Psicologa. Uno spazio sicuro dove ritrovare il tuo equilibrio e la serenità che meriti.
+            <p className="text-background/50 text-xs leading-relaxed mb-4">
+              Psicologa — iscrizione Albo degli Psicologi del {alboRegion} n. {alboNumber}
+            </p>
+            <p className="text-background/60 text-sm italic leading-relaxed max-w-xs">
+              “Uno spazio sicuro in cui ascolto, accoglienza e cambiamento si incontrano.”
             </p>
           </div>
 
@@ -68,17 +73,20 @@ export default function Footer() {
               </a>
               <div className="flex items-start gap-3 text-sm text-background/60">
                 <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                {studioAddress}
+                <div className="space-y-1">
+                  <p>{studioAddress}</p>
+                  {studioAddress2 && <p>{studioAddress2}</p>}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-background/10 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mt-12 pt-8 border-t border-background/10 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <p className="text-xs text-background/40">
-            © {new Date().getFullYear()} Dott.ssa Martina Giovinazzo — P.IVA {studioVat} — Albo Psicologi n. {alboNumber}
+            © {new Date().getFullYear()} Dott.ssa Martina Giovinazzo — P.IVA {studioVat} — Albo Psicologi del {alboRegion} n. {alboNumber}
           </p>
-          <p className="text-xs text-background/40">Iscrizione Albo Psicologi del {alboRegion}</p>
+          {legalAddress && <p className="text-xs text-background/30">Sede legale: {legalAddress}</p>}
         </div>
       </div>
     </footer>
