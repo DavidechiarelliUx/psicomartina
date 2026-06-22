@@ -382,13 +382,14 @@ export default function Contact() {
                   {LOCATIONS.length > 1 && (
                     <div className="space-y-2">
                       <Label>Sede *</Label>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                         {LOCATIONS.map((loc) => {
                           const active = form.location === loc.code;
                           return (
                             <button
                               key={loc.code}
                               type="button"
+                              title={loc.label}
                               onClick={() =>
                                 setForm((prev) => ({
                                   ...prev,
@@ -398,11 +399,11 @@ export default function Contact() {
                                   consent: { ...prev.consent, service_location: locationLabel(loc.code) },
                                 }))
                               }
-                              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                              className={`w-full rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
                                 active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-muted"
                               }`}
                             >
-                              {loc.label}
+                              {loc.short}
                             </button>
                           );
                         })}

@@ -115,20 +115,21 @@ export default function BookingHoursSettings() {
       </div>
 
       {LOCATIONS.length > 1 && (
-        <div className="mb-5 flex flex-wrap gap-2">
+        <div className="mb-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
           {LOCATIONS.map((loc) => (
             <button
               key={loc.code}
               type="button"
+              title={loc.label}
               onClick={() => {
                 setStatus("");
                 setLocation(loc.code);
               }}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+              className={`w-full rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
                 location === loc.code ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:bg-muted"
               }`}
             >
-              {loc.label}
+              {loc.short}
             </button>
           ))}
         </div>
