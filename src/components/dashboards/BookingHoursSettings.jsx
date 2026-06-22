@@ -168,10 +168,10 @@ export default function BookingHoursSettings() {
               <span>{DAYS[item.day_of_week]}</span>
               <span className={`rounded-full px-2 py-0.5 text-xs ${item.is_open ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{item.is_open ? "Aperto" : "Chiuso"}</span>
             </label>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <TimeField label="Apre" value={item.opens_at} disabled={!item.is_open} onChange={(value) => updateDay(item.day_of_week, { opens_at: value })} />
               <TimeField label="Chiude" value={item.closes_at} disabled={!item.is_open} onChange={(value) => updateDay(item.day_of_week, { closes_at: value })} />
-              <label className="col-span-2 block text-xs font-medium text-muted-foreground sm:col-span-1">
+              <label className="block min-w-0 text-xs font-medium text-muted-foreground">
                 Durata slot
                 <select
                   value={item.slot_minutes}
@@ -245,7 +245,7 @@ export default function BookingHoursSettings() {
 
 function TimeField({ label, value, onChange, disabled = false }) {
   return (
-    <label className="block text-xs font-medium text-muted-foreground">
+    <label className="block min-w-0 text-xs font-medium text-muted-foreground">
       {label}
       <input
         type="time"
