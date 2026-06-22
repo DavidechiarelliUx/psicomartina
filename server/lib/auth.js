@@ -62,23 +62,29 @@ function safeEqual(a, b) {
  * sulle funzioni serverless di Vercel protegge per-istanza (warm). Per protezione
  * robusta in produzione su serverless usare Vercel KV/Upstash o il WAF di Vercel.
  */
-const loginAttempts = new Map();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000; // 15 minuti
+// Lockout PROGRESSIVO: ogni 5 tentativi falliti scatta un blocco temporaneo che
+// raddoppia di durata ad ogni nuovo blocco (5, 10, 20, 40... minuti, fino a un tetto).
+// Un login riuscito azzera tutto. Il livello si resetta dopo 24h di inattività.
+const loginAttempts = new Map(); // ip -> { fails, level, lockUntil, last }
+const MAX_FAILS = 5;
+const BASE_LOCK_MS = 5 * 60 * 1000; // 5 minuti
+const MAX_LOCK_MS = 24 * 60 * 60 * 1000; // tetto: 24 ore
+const RESET_AFTER_MS = 24 * 60 * 60 * 1000; // azzera il livello dopo 24h senza tentativi
+
+function getEntry(key) {
+  const entry = loginAttempts.get(key);
+  if (entry && Date.now() - entry.last > RESET_AFTER_MS) {
+    loginAttempts.delete(key);
+    return null;
+  }
+  return entry || null;
+}
 
 export function checkLoginRateLimit(ip) {
   const key = ip || "unknown";
-  const now = Date.now();
-  const entry = loginAttempts.get(key);
-
-  if (!entry || now - entry.first > WINDOW_MS) {
-    loginAttempts.set(key, { count: 0, first: now });
-    return { allowed: true, retryAfter: 0 };
-  }
-
-  if (entry.count >= MAX_ATTEMPTS) {
-    const retryAfter = Math.ceil((entry.first + WINDOW_MS - now) / 1000);
-    return { allowed: false, retryAfter };
+  const entry = getEntry(key);
+  if (entry && entry.lockUntil && Date.now() < entry.lockUntil) {
+    return { allowed: false, retryAfter: Math.ceil((entry.lockUntil - Date.now()) / 1000) };
   }
   return { allowed: true, retryAfter: 0 };
 }
@@ -86,12 +92,16 @@ export function checkLoginRateLimit(ip) {
 export function registerFailedLogin(ip) {
   const key = ip || "unknown";
   const now = Date.now();
-  const entry = loginAttempts.get(key);
-  if (!entry || now - entry.first > WINDOW_MS) {
-    loginAttempts.set(key, { count: 1, first: now });
-  } else {
-    entry.count += 1;
+  const entry = getEntry(key) || { fails: 0, level: 0, lockUntil: 0, last: now };
+  entry.fails += 1;
+  entry.last = now;
+  if (entry.fails >= MAX_FAILS) {
+    entry.level += 1;
+    const lockMs = Math.min(BASE_LOCK_MS * 2 ** (entry.level - 1), MAX_LOCK_MS);
+    entry.lockUntil = now + lockMs;
+    entry.fails = 0; // riparte il conteggio per il livello successivo
   }
+  loginAttempts.set(key, entry);
 }
 
 export function clearLoginAttempts(ip) {
