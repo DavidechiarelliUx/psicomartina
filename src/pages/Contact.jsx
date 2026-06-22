@@ -375,9 +375,6 @@ export default function Contact() {
                           <SelectItem value="sostegno_psicologico">Sostegno psicologico</SelectItem>
                           <SelectItem value="potenziamento_cognitivo">Potenziamento cognitivo</SelectItem>
                           <SelectItem value="screening_dsa">Screening DSA</SelectItem>
-                          <SelectItem value="ansia">Ansia e stress</SelectItem>
-                          <SelectItem value="eta_evolutiva">Età evolutiva</SelectItem>
-                          <SelectItem value="genitorialita">Genitorialità</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
