@@ -48,8 +48,8 @@ const faqs = [
     a: "Le tariffe sono trasparenti e vengono concordate fin dal primo contatto.",
   },
   {
-    q: "Gli incontri sono detraibili?",
-    a: "Sì, le spese per le prestazioni psicologiche sono detraibili al 19% nella dichiarazione dei redditi.",
+    q: "Quello che dico resta riservato?",
+    a: "Sì, sempre. Come psicologa sono vincolata al segreto professionale: tutto ciò che condividi resta in uno spazio protetto e riservato.",
   },
 ];
 
