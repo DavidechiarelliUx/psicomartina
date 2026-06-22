@@ -551,24 +551,12 @@ export default function Contact() {
                           />
                         </div>
                       )}
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label>Sede della prestazione *</Label>
-                        <Select
-                          value={serviceLocationOptions.includes(form.consent.service_location) ? form.consent.service_location : defaultServiceLocation}
-                          onValueChange={(v) => updateConsent("service_location", v)}
-                        >
-                          <SelectTrigger className="bg-background">
-                            <SelectValue placeholder="Seleziona la sede" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {studioLocations.map((address, index) => (
-                              <SelectItem key={address} value={address}>
-                                In studio {index + 1} ({address})
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="Online">Online</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="space-y-1 sm:col-span-2">
+                        <Label>Sede della prestazione</Label>
+                        <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                          {form.consent.service_location || locationLabel(form.location)}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">Corrisponde alla sede scelta sopra.</p>
                       </div>
                       {(form.consent.subject_type === "minor" || form.consent.subject_type === "protected_person") && (
                         <>
