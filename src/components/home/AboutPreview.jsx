@@ -41,12 +41,17 @@ export default function AboutPreview() {
               Credo che ogni persona abbia già dentro di sé le risorse per stare meglio. Il mio ruolo è aiutarti a scoprirle, in uno spazio privo di giudizio.
             </p>
 
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
               {stats.map((stat) => (
-                <div key={stat.label} className="text-center p-3 bg-card rounded-xl border border-border">
-                  <stat.icon className="w-5 h-5 text-primary mx-auto mb-2" />
-                  <p className="font-heading text-xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+                <div
+                  key={stat.label}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 sm:flex-col sm:gap-0 sm:p-3 sm:text-center"
+                >
+                  <stat.icon className="h-5 w-5 flex-shrink-0 text-primary sm:mx-auto sm:mb-2" />
+                  <div>
+                    <p className="font-heading text-base font-bold leading-tight text-foreground sm:text-lg">{stat.value}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{stat.label}</p>
+                  </div>
                 </div>
               ))}
             </div>
