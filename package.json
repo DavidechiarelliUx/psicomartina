@@ -57,6 +57,7 @@
     "cloudinary": "^1.41.3",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "codice-fiscale-js": "^2.3.23",
     "concurrently": "^9.2.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.5.2",

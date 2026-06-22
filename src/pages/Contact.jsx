@@ -20,6 +20,33 @@ import SEOHead from "@/components/SEOHead";
 import { getCanonicalUrl, seoPages } from "@/config/seo";
 import { useConsent, useAnalyticsConsent } from "@/lib/consent";
 import { LOCATIONS, DEFAULT_LOCATION, locationLabel } from "@/config/locations";
+import CodiceFiscale from "codice-fiscale-js";
+
+// Calcolo automatico del codice fiscale (modificabile a mano). Label campo "Nome e cognome"
+// => primo token = nome, resto = cognome.
+function computeFiscalCode({ fullName, gender, birthDate, birthPlace }) {
+  if (!fullName || !gender || !birthDate || !birthPlace) return "";
+  const parts = String(fullName).trim().split(/\s+/);
+  if (parts.length < 2) return "";
+  const name = parts[0];
+  const surname = parts.slice(1).join(" ");
+  const d = new Date(birthDate);
+  if (Number.isNaN(d.getTime())) return "";
+  try {
+    const cf = new CodiceFiscale({
+      name,
+      surname,
+      gender,
+      day: d.getUTCDate(),
+      month: d.getUTCMonth() + 1,
+      year: d.getUTCFullYear(),
+      birthplace: String(birthPlace).trim(),
+    });
+    return cf.toString();
+  } catch {
+    return "";
+  }
+}
 
 const studioEmail = import.meta.env.VITE_STUDIO_EMAIL;
 const studioPhone = import.meta.env.VITE_STUDIO_PHONE;
@@ -35,6 +62,7 @@ const emptyConsent = {
   client_email: "",
   phone: "",
   fiscal_code: "",
+  gender: "",
   birth_place: "",
   birth_date: "",
   residence_city: "",
@@ -112,6 +140,7 @@ export default function Contact() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [sent, setSent] = useState(false);
+  const [cfManual, setCfManual] = useState(false);
   const monthKey = format(visibleMonth, "yyyy-MM");
   const { data: availability, isFetching: availabilityLoading } = useQuery({
     queryKey: ["availability", monthKey, form.location],
@@ -128,6 +157,25 @@ export default function Contact() {
       setForm((prev) => ({ ...prev, time_slot: "" }));
     }
   }, [form.time_slot, selectedBookedSlots]);
+
+  // Auto-calcolo del codice fiscale dell'assistito/minore (finché non lo si modifica a mano).
+  useEffect(() => {
+    if (cfManual) return;
+    const c = form.consent;
+    const fullName = c.subject_type === "minor" ? c.minor_full_name : c.client_full_name;
+    const cf = computeFiscalCode({ fullName, gender: c.gender, birthDate: c.birth_date, birthPlace: c.birth_place });
+    if (cf && cf !== c.fiscal_code) {
+      setForm((prev) => ({ ...prev, consent: { ...prev.consent, fiscal_code: cf } }));
+    }
+  }, [
+    cfManual,
+    form.consent.subject_type,
+    form.consent.client_full_name,
+    form.consent.minor_full_name,
+    form.consent.gender,
+    form.consent.birth_date,
+    form.consent.birth_place,
+  ]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -631,14 +679,32 @@ export default function Contact() {
                         />
                       </div>
                       <div className="space-y-2">
+                        <Label htmlFor="consent-gender">Sesso *</Label>
+                        <Select value={form.consent.gender} onValueChange={(v) => updateConsent("gender", v)}>
+                          <SelectTrigger id="consent-gender" className="bg-background">
+                            <SelectValue placeholder="Seleziona" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="M">Maschile</SelectItem>
+                            <SelectItem value="F">Femminile</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
                         <Label htmlFor="fiscal-code">Codice fiscale *</Label>
                         <Input
                           id="fiscal-code"
                           value={form.consent.fiscal_code}
-                          onChange={(e) => updateConsent("fiscal_code", e.target.value.toUpperCase())}
-                          placeholder="Codice fiscale"
+                          onChange={(e) => {
+                            setCfManual(true);
+                            updateConsent("fiscal_code", e.target.value.toUpperCase());
+                          }}
+                          placeholder="Calcolato in automatico"
                           className="bg-background uppercase"
                         />
+                        <p className="text-[11px] text-muted-foreground">
+                          Generato in automatico da nome, sesso, data e luogo di nascita. Puoi correggerlo se necessario.
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="birth-place">Luogo di nascita *</Label>
@@ -689,30 +755,6 @@ export default function Contact() {
                           placeholder="N."
                           className="bg-background"
                         />
-                      </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label>Modalità di pagamento *</Label>
-                        <Select value={form.consent.payment_method} onValueChange={(v) => updateConsent("payment_method", v)}>
-                          <SelectTrigger className="bg-background">
-                            <SelectValue placeholder="Seleziona la modalità" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Bonifico bancario">Bonifico bancario</SelectItem>
-                            <SelectItem value="Carta di credito/Bancomat">Carta di credito/Bancomat</SelectItem>
-                            <SelectItem value="Assegno">Assegno</SelectItem>
-                            <SelectItem value="Bonifico bancario, carta/bancomat o altro metodo tracciabile concordato con lo studio.">
-                              Altro metodo tracciabile concordato con lo studio
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="sm:col-span-2 rounded-xl border border-border bg-muted/40 p-4 text-sm">
-                        <p className="text-foreground">
-                          <span className="font-medium">Compenso per incontro:</span> 45 € a seduta
-                        </p>
-                        <p className="mt-1 text-muted-foreground">
-                          <span className="font-medium text-foreground">Regime fiscale:</span> Operazione esente IVA ex art.10, comma 1, n.18 del D.P.R. n.633/1972
-                        </p>
                       </div>
                       <div className="space-y-2 sm:col-span-2">
                         <Label>Consenso trattamento dati personali *</Label>
