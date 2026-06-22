@@ -15,10 +15,12 @@ export const LOCATIONS = [
   },
 ].filter((l) => l.label);
 
-// Etichetta breve per i selettori (chip/tab): prende la parte prima di " - " o della virgola.
-// Es. "Studio Medico Efigyn - Via Bruno Serotini 45, Roma" -> "Studio Medico Efigyn".
+// Etichetta breve per i selettori (chip/tab): solo la VIA.
+// Es. "Studio Medico Efigyn - Via Bruno Serotini 45, Roma" -> "Via Bruno Serotini 45".
+//     "Via Tricerro 100, Roma" -> "Via Tricerro 100" · "Online" -> "Online".
 LOCATIONS.forEach((l) => {
-  l.short = l.label.split(/\s[-–]\s|,/)[0].trim();
+  const afterDash = l.label.includes(" - ") ? l.label.split(" - ").slice(1).join(" - ") : l.label;
+  l.short = afterDash.split(",")[0].trim();
 });
 
 export const DEFAULT_LOCATION = LOCATIONS[0]?.code || "sede1";

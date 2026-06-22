@@ -115,6 +115,14 @@ function defaultBookingScheduleFor(location) {
   return defaultBookingSchedule.map((day) => ({ ...day, isOpen: false }));
 }
 
+// Etichetta completa della sede (per email/consenso), dalle env del sito.
+function locationFullLabel(code) {
+  const c = normalizeLocation(code);
+  if (c === "online") return "Online";
+  if (c === "sede2") return process.env.VITE_STUDIO_ADDRESS_2 || "Sede secondaria";
+  return process.env.VITE_STUDIO_ADDRESS || "Studio";
+}
+
 function getConfiguredServiceLocations() {
   const studioAddresses = [process.env.VITE_STUDIO_ADDRESS, process.env.VITE_STUDIO_ADDRESS_2]
     .map((value) => sanitizeText(value))
@@ -1001,6 +1009,7 @@ async function sendBookingEmails({ payload, appointment, consensoPdf }) {
     telefono: appointment.client.phone,
   };
   const serviceName = appointment.service?.title || serviceLabels[appointment.serviceType] || appointment.serviceType;
+  const sede = locationFullLabel(payload.location);
 
   try {
     await sendBookingNotificationToStudio({
@@ -1008,6 +1017,7 @@ async function sendBookingEmails({ payload, appointment, consensoPdf }) {
       data: payload.date,
       ora: payload.time_slot,
       servizio: serviceName,
+      sede,
       messaggio: payload.notes,
       consensoPdf,
     });
@@ -1021,6 +1031,7 @@ async function sendBookingEmails({ payload, appointment, consensoPdf }) {
       data: payload.date,
       ora: payload.time_slot,
       servizio: serviceName,
+      sede,
     });
   } catch (error) {
     console.error("Email ricevuta richiesta cliente non inviata:", error.message);

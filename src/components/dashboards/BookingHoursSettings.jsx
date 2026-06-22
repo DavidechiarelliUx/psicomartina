@@ -162,29 +162,31 @@ export default function BookingHoursSettings() {
 
       <div className="grid gap-3">
         {schedules.map((item) => (
-          <div key={item.day_of_week} className={`grid gap-3 rounded-xl border p-4 md:grid-cols-[1.2fr_0.9fr_0.9fr_0.9fr] md:items-center ${item.is_open ? "border-border bg-background" : "border-border bg-muted/40"}`}>
-            <label className="flex items-center gap-3 text-sm font-medium text-foreground">
+          <div key={item.day_of_week} className={`rounded-xl border p-4 ${item.is_open ? "border-border bg-background" : "border-border bg-muted/40"}`}>
+            <label className="mb-3 flex items-center gap-3 text-sm font-medium text-foreground">
               <input type="checkbox" checked={item.is_open} onChange={(event) => updateDay(item.day_of_week, { is_open: event.target.checked })} className="h-4 w-4 accent-primary" />
               <span>{DAYS[item.day_of_week]}</span>
               <span className={`rounded-full px-2 py-0.5 text-xs ${item.is_open ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{item.is_open ? "Aperto" : "Chiuso"}</span>
             </label>
-            <TimeField label="Apre" value={item.opens_at} disabled={!item.is_open} onChange={(value) => updateDay(item.day_of_week, { opens_at: value })} />
-            <TimeField label="Chiude" value={item.closes_at} disabled={!item.is_open} onChange={(value) => updateDay(item.day_of_week, { closes_at: value })} />
-            <label className="block text-xs font-medium text-muted-foreground">
-              Durata slot
-              <select
-                value={item.slot_minutes}
-                disabled={!item.is_open}
-                onChange={(event) => updateDay(item.day_of_week, { slot_minutes: Number(event.target.value) })}
-                className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground disabled:opacity-60"
-              >
-                {[30, 45, 60, 90].map((value) => (
-                  <option key={value} value={value}>
-                    {value} min
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <TimeField label="Apre" value={item.opens_at} disabled={!item.is_open} onChange={(value) => updateDay(item.day_of_week, { opens_at: value })} />
+              <TimeField label="Chiude" value={item.closes_at} disabled={!item.is_open} onChange={(value) => updateDay(item.day_of_week, { closes_at: value })} />
+              <label className="col-span-2 block text-xs font-medium text-muted-foreground sm:col-span-1">
+                Durata slot
+                <select
+                  value={item.slot_minutes}
+                  disabled={!item.is_open}
+                  onChange={(event) => updateDay(item.day_of_week, { slot_minutes: Number(event.target.value) })}
+                  className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground disabled:opacity-60"
+                >
+                  {[30, 45, 60, 90].map((value) => (
+                    <option key={value} value={value}>
+                      {value} min
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
         ))}
       </div>
@@ -250,7 +252,7 @@ function TimeField({ label, value, onChange, disabled = false }) {
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground disabled:opacity-60"
+        className="mt-1 block w-full min-w-0 box-border rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground disabled:opacity-60"
       />
     </label>
   );

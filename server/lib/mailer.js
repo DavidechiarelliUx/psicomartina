@@ -86,7 +86,7 @@ function infoRow(label, value) {
   `;
 }
 
-export async function sendBookingNotificationToStudio({ cliente, data, ora, servizio, messaggio, consensoPdf }) {
+export async function sendBookingNotificationToStudio({ cliente, data, ora, servizio, sede, messaggio, consensoPdf }) {
   const transporter = getTransporter();
   const fullName = `${cliente.nome} ${cliente.cognome || ""}`.trim();
   await transporter.sendMail({
@@ -113,6 +113,7 @@ export async function sendBookingNotificationToStudio({ cliente, data, ora, serv
             ${infoRow("Email", cliente.email)}
             ${infoRow("Telefono", cliente.telefono || "non fornito")}
             ${infoRow("Servizio", servizio)}
+            ${sede ? infoRow("Sede", sede) : ""}
             ${infoRow("Data e ora", `${data} alle ${ora}`)}
           </table>
         </div>
@@ -129,7 +130,7 @@ export async function sendBookingNotificationToStudio({ cliente, data, ora, serv
   });
 }
 
-export async function sendBookingRequestReceivedToClient({ cliente, data, ora, servizio }) {
+export async function sendBookingRequestReceivedToClient({ cliente, data, ora, servizio, sede }) {
   const transporter = getTransporter();
   await transporter.sendMail({
     from: sender(),
@@ -143,6 +144,7 @@ export async function sendBookingRequestReceivedToClient({ cliente, data, ora, s
         <div style="border:1px solid #E9DDCF;border-radius:16px;padding:18px 20px;background:#FFFDF9;">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
             ${infoRow("Servizio", servizio)}
+            ${sede ? infoRow("Sede", sede) : ""}
             ${infoRow("Data richiesta", data)}
             ${infoRow("Orario", ora)}
           </table>
