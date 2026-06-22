@@ -5,11 +5,13 @@ import { ArrowRight, Award, BookOpen, Users } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ABOUT_IMG = "/images/studio.png";
+const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "32977";
+const alboRegion = import.meta.env.VITE_STUDIO_ALBO_REGION || "Lazio";
 
 const stats = [
-  { icon: Users, value: "10+", label: "Anni di esperienza" },
-  { icon: Award, value: "500+", label: "Persone aiutate" },
-  { icon: BookOpen, value: "200+", label: "Ore di formazione" },
+  { icon: Award, value: `Albo ${alboRegion}`, label: `Iscritta n. ${alboNumber}` },
+  { icon: BookOpen, value: "CBT", label: "Approccio cognitivo-comportamentale" },
+  { icon: Users, value: "Roma + Online", label: "Adulti, adolescenti e bambini" },
 ];
 
 export default function AboutPreview() {

@@ -5,6 +5,8 @@ import { ArrowRight, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
 const HERO_IMG = "https://res.cloudinary.com/damrrcxs5/image/upload/f_auto,q_auto/v1781955077/psicomartina/site/martina-giovinazzo.jpg";
+const alboNumber = import.meta.env.VITE_STUDIO_ALBO_NUMBER || "32977";
+const alboRegion = import.meta.env.VITE_STUDIO_ALBO_REGION || "Lazio";
 
 export default function HeroSection() {
   return (
@@ -61,9 +63,9 @@ export default function HeroSection() {
                 className="relative rounded-[1.5rem] shadow-2xl w-full max-w-md object-cover aspect-[3/4]"
               />
               <div className="absolute -bottom-4 -left-4 bg-card border border-border rounded-xl p-4 shadow-lg">
-                <p className="text-xs text-muted-foreground font-medium">Oltre</p>
-                <p className="text-2xl font-heading font-bold text-primary">500+</p>
-                <p className="text-xs text-muted-foreground">persone accompagnate</p>
+                <p className="text-xs text-muted-foreground font-medium">Psicologa</p>
+                <p className="text-2xl font-heading font-bold text-primary">Albo {alboRegion}</p>
+                <p className="text-xs text-muted-foreground">n. {alboNumber}</p>
               </div>
             </div>
           </motion.div>
