@@ -134,7 +134,7 @@ export default function About() {
               </ul>
             </div>
             <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}>
-              <img src={OFFICE_IMG} alt="Studio della Dott.ssa Martina Giovinazzo" className="rounded-2xl shadow-xl w-full object-cover aspect-video" />
+              <img src={OFFICE_IMG} alt="Un ambiente accogliente e riservato per gli incontri" className="rounded-2xl shadow-xl w-full object-cover aspect-video" />
             </motion.div>
           </div>
         </div>

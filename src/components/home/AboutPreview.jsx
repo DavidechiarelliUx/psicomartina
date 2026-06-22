@@ -24,7 +24,7 @@ export default function AboutPreview() {
               <div className="absolute -inset-3 bg-gradient-to-br from-primary/10 to-secondary/20 rounded-[2rem] blur-xl" />
               <img
                 src={ABOUT_IMG}
-                alt="Lo studio della Dott.ssa Martina Giovinazzo"
+                alt="Un ambiente accogliente per gli incontri"
                 className="relative rounded-2xl shadow-xl w-full object-cover aspect-[4/3]"
               />
             </div>
