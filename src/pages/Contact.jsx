@@ -303,9 +303,9 @@ export default function Contact() {
 
               <div className="bg-card border border-border rounded-2xl p-6">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  <strong className="text-foreground">Sedute online</strong>
+                  <strong className="text-foreground">Incontri online</strong>
                   <br />
-                  Offro anche sedute tramite videochiamata, con la stessa qualità e riservatezza delle sedute in studio.
+                  Ricevo anche tramite videochiamata, con la stessa cura e riservatezza degli incontri in studio.
                 </p>
               </div>
 

@@ -85,7 +85,7 @@ export default function Navbar() {
                 </Link>
               ))}
               <Link to="/contatti" className="block pt-2">
-                <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-full">Prenota una Seduta</Button>
+                <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-full">Prenota un Colloquio</Button>
               </Link>
             </div>
           </motion.div>

@@ -24,7 +24,7 @@ export const seoPages = {
     title: "Come Funziona",
     path: "/come-funziona",
     description:
-      "Scopri come funziona il percorso psicologico, dal primo contatto alle sedute online o in studio. Prenota un colloquio conoscitivo senza impegno.",
+      "Scopri come funziona il percorso di sostegno psicologico, dal primo contatto agli incontri online o in studio. Prenota un colloquio conoscitivo senza impegno.",
   },
   blog: {
     title: "Blog di Psicologia",

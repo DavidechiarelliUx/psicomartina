@@ -21,35 +21,35 @@ const steps = [
   {
     icon: Target,
     title: "Definizione degli Obiettivi",
-    description: "Insieme stabiliamo gli obiettivi del percorso terapeutico e l'approccio più adatto a te.",
+    description: "Insieme stabiliamo gli obiettivi del percorso di sostegno e l'approccio più adatto a te.",
   },
   {
     icon: TrendingUp,
     title: "Il Percorso",
-    description: "Sedute settimanali di 50 minuti, in studio o online. Monitoriamo i progressi e adattiamo il percorso alle tue esigenze.",
+    description: "Incontri periodici di circa 50 minuti, in studio o online. Monitoriamo i progressi e adattiamo il percorso alle tue esigenze.",
   },
 ];
 
 const faqs = [
   {
-    q: "Quanto dura una seduta?",
-    a: "Ogni seduta dura 50 minuti. La frequenza consigliata è settimanale, ma è flessibile in base alle tue esigenze.",
+    q: "Quanto dura un incontro?",
+    a: "Ogni incontro dura circa 50 minuti. La frequenza viene concordata insieme ed è flessibile in base alle tue esigenze.",
   },
   {
     q: "Quanto dura il percorso complessivo?",
     a: "La durata varia in base agli obiettivi. Alcuni percorsi durano pochi mesi, altri possono essere più lunghi. Ne parleremo insieme fin dall'inizio.",
   },
   {
-    q: "Fai sedute online?",
-    a: "Sì, offro sedute sia in studio a Roma che online tramite videochiamata, con la stessa efficacia e riservatezza.",
+    q: "Fai incontri online?",
+    a: "Sì, ricevo sia in studio a Roma che online tramite videochiamata, con la stessa cura e riservatezza.",
   },
   {
-    q: "Quanto costa una seduta?",
-    a: "Le tariffe vengono discusse durante il primo colloquio conoscitivo gratuito. Sono trasparenti e in linea con il tariffario dell'Ordine.",
+    q: "Quanto costa un incontro?",
+    a: "Le tariffe sono trasparenti e vengono concordate fin dal primo contatto.",
   },
   {
-    q: "Le sedute sono detraibili?",
-    a: "Sì, le spese per le sedute psicologiche sono detraibili al 19% nella dichiarazione dei redditi.",
+    q: "Gli incontri sono detraibili?",
+    a: "Sì, le spese per le prestazioni psicologiche sono detraibili al 19% nella dichiarazione dei redditi.",
   },
 ];
 

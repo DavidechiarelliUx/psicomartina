@@ -24,7 +24,7 @@ export default function AboutPreview() {
               <div className="absolute -inset-3 bg-gradient-to-br from-primary/10 to-secondary/20 rounded-[2rem] blur-xl" />
               <img
                 src={ABOUT_IMG}
-                alt="Dott.ssa Martina Giovinazzo durante una seduta"
+                alt="Lo studio della Dott.ssa Martina Giovinazzo"
                 className="relative rounded-2xl shadow-xl w-full object-cover aspect-[4/3]"
               />
             </div>
@@ -32,10 +32,11 @@ export default function AboutPreview() {
 
           <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.15 }}>
             <span className="inline-block text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Chi Sono</span>
-            <h2 className="font-heading text-display-sm md:text-display font-semibold text-foreground mb-5">Credo nel potere della relazione terapeutica</h2>
+            <h2 className="font-heading text-display-sm md:text-display font-semibold text-foreground mb-5">Uno spazio di ascolto, senza giudizio</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              Sono la Dott.ssa Martina Giovinazzo, psicologa iscritta all'Albo degli Psicologi. Il mio approccio integra tecniche cognitive,
-              relazionali e corporee per offrirti un percorso davvero su misura.
+              Sono la Dott.ssa Martina Giovinazzo, psicologa iscritta all'Albo degli Psicologi del Lazio. Lavoro con un approccio
+              cognitivo-comportamentale, che mette in relazione pensieri, emozioni e comportamenti per offrirti strumenti concreti
+              e un percorso di sostegno su misura.
             </p>
             <p className="text-muted-foreground leading-relaxed mb-8">
               Credo che ogni persona abbia già dentro di sé le risorse per stare meglio. Il mio ruolo è aiutarti a scoprirle, in uno spazio privo di giudizio.
