@@ -472,7 +472,17 @@ function normalizeConsentPayload(payload, appointmentPayload, options = {}) {
     serviceLocation: sanitizeText(consent.service_location) || getConfiguredServiceLocations()[0],
     minorFullName: sanitizeText(consent.minor_full_name) || null,
     tutorFullName: sanitizeText(consent.tutor_full_name) || null,
+    tutorBirthPlace: sanitizeText(consent.tutor_birth_place) || null,
+    tutorBirthDate: parseDateOnly(consent.tutor_birth_date),
+    tutorResidenceCity: sanitizeText(consent.tutor_residence_city) || null,
+    tutorResidenceAddress: sanitizeText(consent.tutor_residence_address) || null,
+    tutorResidenceNumber: sanitizeText(consent.tutor_residence_number) || null,
     secondTutorFullName: sanitizeText(consent.second_tutor_full_name) || null,
+    secondTutorBirthPlace: sanitizeText(consent.second_tutor_birth_place) || null,
+    secondTutorBirthDate: parseDateOnly(consent.second_tutor_birth_date),
+    secondTutorResidenceCity: sanitizeText(consent.second_tutor_residence_city) || null,
+    secondTutorResidenceAddress: sanitizeText(consent.second_tutor_residence_address) || null,
+    secondTutorResidenceNumber: sanitizeText(consent.second_tutor_residence_number) || null,
     compensationAmount: sanitizeText(consent.compensation_amount || "45") || "45",
     taxRegime: sanitizeText(consent.tax_regime || "Operazione esente IVA ex art.10, comma 1, n.18 del D.P.R. n.633/1972") || null,
     paymentMethod: sanitizeText(consent.payment_method || "Bonifico bancario, carta/bancomat o altro metodo tracciabile concordato con lo studio.") || null,
@@ -659,15 +669,30 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
     // MADRE (pagina 6)
     line(5, consent.tutorFullName, 115, 408.5, { maxChars: 60 });          // La Sig.ra ...
     line(5, consent.minorFullName, 255, 424.5, { maxChars: 38 });          // madre del minorenne ...
+    line(5, consent.tutorBirthPlace, 82, 440.4, { maxChars: 46 });         // nata a ...
+    dateSlots(5, consent.tutorBirthDate, 375, 392, 405, 440.4, 7);         // il __/__/__
+    line(5, consent.tutorResidenceCity, 142, 456.3, { maxChars: 52 });     // residente a ...
+    line(5, consent.tutorResidenceAddress, 148, 472.3, { maxChars: 44 });  // in via/piazza ...
+    line(5, consent.tutorResidenceNumber, 466, 472.3, { maxChars: 6 });    // n.
     consentCheck(5, 557.3);
     // PADRE (pagina 6 -> pagina 7)
     line(5, consent.secondTutorFullName, 110, 718.2, { maxChars: 60 });    // Il Sig. ...
     line(5, consent.minorFullName, 190, 734.3, { maxChars: 40 });          // padre del minorenne ...
+    line(5, consent.secondTutorBirthPlace, 106, 752.6, { maxChars: 46 });  // Nat.. a ...
+    dateSlots(5, consent.secondTutorBirthDate, 392, 410, 428, 752.6, 7);   // il __/__/__
+    line(6, consent.secondTutorResidenceCity, 142, 84.6, { maxChars: 52 }); // residente a ... (pag.7)
+    line(6, consent.secondTutorResidenceAddress, 153, 98.3, { maxChars: 44 }); // in via/piazza ...
+    line(6, consent.secondTutorResidenceNumber, 466, 98.3, { maxChars: 6 });
     consentCheck(6, 183.8);
   } else if (finalBox === "protected_person") {
     // PERSONE SOTTO TUTELA (pagina 7)
     line(6, consent.tutorFullName || consent.signedName, 140, 372.2, { maxChars: 58 }); // La Sig.ra/Il Sig. (tutore)
+    line(6, consent.tutorBirthPlace, 108, 387.7, { maxChars: 44 });        // nata/o a ...
+    dateSlots(6, consent.tutorBirthDate, 448, 472, 490, 387.7, 7);         // il __/__/__
     line(6, consent.clientFullName, 175, 403.3, { maxChars: 48 });         // Tutore del Sig. ... (assistito)
+    line(6, consent.tutorResidenceCity, 142, 449.9, { maxChars: 52 });     // residente a ...
+    line(6, consent.tutorResidenceAddress, 148, 465.8, { maxChars: 44 });  // in via/piazza ...
+    line(6, consent.tutorResidenceNumber, 466, 465.8, { maxChars: 6 });    // n.
     consentCheck(6, 551.4);
   } else {
     // ADULTI (pagina 6)
@@ -856,7 +881,17 @@ async function createAppointment(payload) {
           serviceOther: consent.serviceOther,
           minorFullName: consent.minorFullName,
           tutorFullName: consent.tutorFullName,
+          tutorBirthPlace: consent.tutorBirthPlace,
+          tutorBirthDate: consent.tutorBirthDate,
+          tutorResidenceCity: consent.tutorResidenceCity,
+          tutorResidenceAddress: consent.tutorResidenceAddress,
+          tutorResidenceNumber: consent.tutorResidenceNumber,
           secondTutorFullName: consent.secondTutorFullName,
+          secondTutorBirthPlace: consent.secondTutorBirthPlace,
+          secondTutorBirthDate: consent.secondTutorBirthDate,
+          secondTutorResidenceCity: consent.secondTutorResidenceCity,
+          secondTutorResidenceAddress: consent.secondTutorResidenceAddress,
+          secondTutorResidenceNumber: consent.secondTutorResidenceNumber,
           compensationAmount: consent.compensationAmount,
           taxRegime: consent.taxRegime,
           paymentMethod: consent.paymentMethod,
@@ -1123,7 +1158,17 @@ async function sendGeneratedConsentPdf(res, consentId) {
       serviceOther: record.serviceOther,
       minorFullName: record.minorFullName,
       tutorFullName: record.tutorFullName,
+      tutorBirthPlace: record.tutorBirthPlace,
+      tutorBirthDate: record.tutorBirthDate,
+      tutorResidenceCity: record.tutorResidenceCity,
+      tutorResidenceAddress: record.tutorResidenceAddress,
+      tutorResidenceNumber: record.tutorResidenceNumber,
       secondTutorFullName: record.secondTutorFullName,
+      secondTutorBirthPlace: record.secondTutorBirthPlace,
+      secondTutorBirthDate: record.secondTutorBirthDate,
+      secondTutorResidenceCity: record.secondTutorResidenceCity,
+      secondTutorResidenceAddress: record.secondTutorResidenceAddress,
+      secondTutorResidenceNumber: record.secondTutorResidenceNumber,
       compensationAmount: record.compensationAmount,
       taxRegime: record.taxRegime,
       paymentMethod: record.paymentMethod,

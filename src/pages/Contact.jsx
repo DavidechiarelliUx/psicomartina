@@ -75,7 +75,17 @@ const emptyConsent = {
   service_location: defaultServiceLocation,
   minor_full_name: "",
   tutor_full_name: "",
+  tutor_birth_place: "",
+  tutor_birth_date: "",
+  tutor_residence_city: "",
+  tutor_residence_address: "",
+  tutor_residence_number: "",
   second_tutor_full_name: "",
+  second_tutor_birth_place: "",
+  second_tutor_birth_date: "",
+  second_tutor_residence_city: "",
+  second_tutor_residence_address: "",
+  second_tutor_residence_number: "",
   compensation_amount: "45",
   tax_regime: "Operazione esente IVA ex art.10, comma 1, n.18 del D.P.R. n.633/1972",
   payment_method: "Bonifico bancario",
@@ -622,29 +632,34 @@ export default function Contact() {
                               />
                             </div>
                           )}
-                          <div className="space-y-2">
-                            <Label htmlFor="tutor-name">
-                              {form.consent.subject_type === "minor" ? "Madre (o esercente la responsabilità genitoriale) *" : "Tutore *"}
-                            </Label>
-                            <Input
-                              id="tutor-name"
-                              value={form.consent.tutor_full_name}
-                              onChange={(e) => updateConsent("tutor_full_name", e.target.value)}
-                              placeholder="Nome e cognome"
-                              className="bg-background"
-                            />
+
+                          {/* Dati di madre/esercente (minore) oppure tutore (tutela) */}
+                          <div className="space-y-2 sm:col-span-2 rounded-xl border border-border bg-muted/30 p-3">
+                            <p className="text-xs font-semibold text-foreground">
+                              {form.consent.subject_type === "minor" ? "Dati della madre (o esercente la responsabilità genitoriale)" : "Dati del tutore"}
+                            </p>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                              <Input value={form.consent.tutor_full_name} onChange={(e) => updateConsent("tutor_full_name", e.target.value)} placeholder="Nome e cognome *" className="bg-background" />
+                              <Input value={form.consent.tutor_birth_place} onChange={(e) => updateConsent("tutor_birth_place", e.target.value)} placeholder="Luogo di nascita" className="bg-background" />
+                              <Input type="date" value={form.consent.tutor_birth_date} onChange={(e) => updateConsent("tutor_birth_date", e.target.value)} className="bg-background" />
+                              <Input value={form.consent.tutor_residence_city} onChange={(e) => updateConsent("tutor_residence_city", e.target.value)} placeholder="Città di residenza" className="bg-background" />
+                              <Input value={form.consent.tutor_residence_address} onChange={(e) => updateConsent("tutor_residence_address", e.target.value)} placeholder="Via/Piazza" className="bg-background" />
+                              <Input value={form.consent.tutor_residence_number} onChange={(e) => updateConsent("tutor_residence_number", e.target.value)} placeholder="N. civico" className="bg-background" />
+                            </div>
                           </div>
-                      {form.consent.subject_type === "minor" && (
-                            <div className="space-y-2">
-                              <Label htmlFor="second-tutor-name">Padre (o esercente la responsabilità genitoriale) *</Label>
-                              <Input
-                                id="second-tutor-name"
-                                required
-                                value={form.consent.second_tutor_full_name}
-                                onChange={(e) => updateConsent("second_tutor_full_name", e.target.value)}
-                                placeholder="Nome e cognome"
-                                className="bg-background"
-                              />
+
+                          {/* Dati del padre/esercente (solo minore) */}
+                          {form.consent.subject_type === "minor" && (
+                            <div className="space-y-2 sm:col-span-2 rounded-xl border border-border bg-muted/30 p-3">
+                              <p className="text-xs font-semibold text-foreground">Dati del padre (o esercente la responsabilità genitoriale)</p>
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <Input value={form.consent.second_tutor_full_name} onChange={(e) => updateConsent("second_tutor_full_name", e.target.value)} placeholder="Nome e cognome *" className="bg-background" />
+                                <Input value={form.consent.second_tutor_birth_place} onChange={(e) => updateConsent("second_tutor_birth_place", e.target.value)} placeholder="Luogo di nascita" className="bg-background" />
+                                <Input type="date" value={form.consent.second_tutor_birth_date} onChange={(e) => updateConsent("second_tutor_birth_date", e.target.value)} className="bg-background" />
+                                <Input value={form.consent.second_tutor_residence_city} onChange={(e) => updateConsent("second_tutor_residence_city", e.target.value)} placeholder="Città di residenza" className="bg-background" />
+                                <Input value={form.consent.second_tutor_residence_address} onChange={(e) => updateConsent("second_tutor_residence_address", e.target.value)} placeholder="Via/Piazza" className="bg-background" />
+                                <Input value={form.consent.second_tutor_residence_number} onChange={(e) => updateConsent("second_tutor_residence_number", e.target.value)} placeholder="N. civico" className="bg-background" />
+                              </div>
                             </div>
                           )}
                         </>

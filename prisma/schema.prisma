@@ -142,7 +142,17 @@ model InformedConsent {
   serviceOther     String?     @map("service_other")
   minorFullName    String?     @map("minor_full_name")
   tutorFullName    String?     @map("tutor_full_name")
+  tutorBirthPlace  String?     @map("tutor_birth_place")
+  tutorBirthDate   DateTime?   @map("tutor_birth_date") @db.Date
+  tutorResidenceCity String?   @map("tutor_residence_city")
+  tutorResidenceAddress String? @map("tutor_residence_address")
+  tutorResidenceNumber String?  @map("tutor_residence_number")
   secondTutorFullName String?  @map("second_tutor_full_name")
+  secondTutorBirthPlace String? @map("second_tutor_birth_place")
+  secondTutorBirthDate DateTime? @map("second_tutor_birth_date") @db.Date
+  secondTutorResidenceCity String? @map("second_tutor_residence_city")
+  secondTutorResidenceAddress String? @map("second_tutor_residence_address")
+  secondTutorResidenceNumber String? @map("second_tutor_residence_number")
   compensationAmount String    @default("45") @map("compensation_amount")
   taxRegime        String?     @map("tax_regime")
   paymentMethod    String?     @map("payment_method")
