@@ -1306,8 +1306,8 @@ async function submitPublicReview(token, payload) {
     throw error;
   }
 
-  const name = sanitizeText(payload.name || appointment.client.fullName);
-  const text = sanitizeText(payload.text);
+  const name = sanitizeText(payload.name || appointment.client.fullName).slice(0, 120);
+  const text = sanitizeText(payload.text).slice(0, 2000);
   const rating = Math.min(5, Math.max(1, Number(payload.rating || 5)));
   if (!name || !text) {
     const error = new Error("Nome e testo recensione sono obbligatori.");
@@ -1554,6 +1554,9 @@ export async function handleApiRequest(req, res) {
       return sendJson(res, 200, await getReviewContext(publicReviewMatch[1]));
     }
     if (publicReviewMatch && req.method === "POST") {
+      if (!checkPublicRateLimit(getClientIp(req), { max: 15 })) {
+        return sendJson(res, 429, { error: "Troppe richieste. Riprova più tardi." });
+      }
       return sendJson(res, 201, await submitPublicReview(publicReviewMatch[1], await readJson(req)));
     }
 
@@ -1768,7 +1771,13 @@ export async function handleApiRequest(req, res) {
 
     return sendJson(res, 404, { error: "Endpoint non trovato" });
   } catch (error) {
-    console.error(error);
-    sendJson(res, error.statusCode || 500, { error: error.message || "Errore server" });
+    const status = error.statusCode || 500;
+    // Gli errori 5xx non previsti non devono esporre dettagli interni al client (info leak).
+    if (status >= 500) {
+      console.error(error);
+      return sendJson(res, status, { error: "Errore interno del server. Riprova più tardi." });
+    }
+    // Errori "attesi" (4xx): messaggio utile e sicuro per l'utente.
+    return sendJson(res, status, { error: error.message || "Richiesta non valida." });
   }
 }
