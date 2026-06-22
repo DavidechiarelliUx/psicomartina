@@ -28,7 +28,7 @@ export default function HeroSection() {
               Uno spazio sicuro dove <span className="text-primary italic">ascoltarti</span> davvero
             </h1>
             <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-lg">
-              Insieme trasformiamo le difficoltà in crescita. Ti accompagno in un percorso di consapevolezza, accoglienza e cambiamento — al tuo ritmo.
+              Psicologa a Roma e online. Accompagno bambini, adolescenti e adulti in un percorso di sostegno, con un approccio cognitivo-comportamentale — al tuo ritmo.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
               <Link to="/contatti">
