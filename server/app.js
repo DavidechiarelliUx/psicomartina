@@ -457,6 +457,7 @@ function normalizeConsentPayload(payload, appointmentPayload, options = {}) {
   const subjectType = ["adult", "minor", "protected_person"].includes(consent.subject_type) ? consent.subject_type : "adult";
   const normalized = {
     subjectType,
+    gender: ["M", "F"].includes(consent.gender) ? consent.gender : null,
     clientFullName: sanitizeText(consent.client_full_name || appointmentPayload.client_name),
     clientEmail: sanitizeText(consent.client_email || appointmentPayload.client_email).toLowerCase(),
     phone: sanitizeText(consent.phone || appointmentPayload.client_phone) || null,
@@ -601,28 +602,33 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
   const isOnline = String(consent.serviceLocation || "").trim().toLowerCase() === "online";
   // X nelle caselle "FORNISCE / NON FORNISCE IL CONSENSO".
   const consentCheck = (pageIndex, yMax) => check(pageIndex, consentGranted ? 74 : 207, yMax);
+  // Desinenza "Nat[o/a]" SOLO se è stato indicato il sesso (M -> o, F -> a).
+  const natEnding = consent.gender === "M" ? "o" : consent.gender === "F" ? "a" : "";
 
   // ===== PAGINA 1: dati anagrafici nel riquadro appropriato (coordinate template V2) =====
   if (consent.subjectType === "minor") {
     line(0, consent.minorFullName, 122, 391.0, { maxChars: 68 });          // Minorenne ...
-    line(0, consent.birthPlace, 110, 407.5, { maxChars: 50 });             // nat... a ...
-    dateSlots(0, consent.birthDate, 375, 398, 420, 407.5, 8);              // il __/__/__
+    line(0, natEnding, 86, 407.5, { maxChars: 1 });                        // nat[o/a]
+    line(0, consent.birthPlace, 112, 407.5, { maxChars: 46 });             // nat... a ...
+    dateSlots(0, consent.birthDate, 376, 392, 405, 407.5, 7);             // il __/__/__
     line(0, consent.fiscalCode, 140, 421.2, { maxChars: 40 });             // codice fiscale ...
     line(0, consent.residenceCity, 122, 437.0, { maxChars: 52 });          // residente a ...
     line(0, consent.residenceAddress, 132, 452.9, { maxChars: 40 });       // in via/piazza ...
     line(0, consent.residenceNumber, 400, 452.9, { maxChars: 6 });         // n. civico
   } else if (consent.subjectType === "protected_person") {
     line(0, consent.clientFullName, 92, 531.0, { maxChars: 70 });          // Sig ...
-    line(0, consent.birthPlace, 108, 549.8, { maxChars: 50 });             // nat... a ...
-    dateSlots(0, consent.birthDate, 371, 394, 416, 549.8, 8);
+    line(0, natEnding, 86, 549.8, { maxChars: 1 });                        // nat[o/a]
+    line(0, consent.birthPlace, 106, 549.8, { maxChars: 48 });             // nat... a ...
+    dateSlots(0, consent.birthDate, 371, 388, 401, 549.8, 7);
     line(0, consent.fiscalCode, 140, 565.7, { maxChars: 40 });
     line(0, consent.residenceCity, 124, 581.6, { maxChars: 52 });
     line(0, consent.residenceAddress, 132, 597.5, { maxChars: 40 });
     line(0, consent.residenceNumber, 400, 597.5, { maxChars: 6 });
   } else {
     line(0, consent.clientFullName, 113, 266.8, { maxChars: 70 });         // Sig/Sig.ra ...
-    line(0, consent.birthPlace, 110, 285.5, { maxChars: 50 });             // Nat..... a ...
-    dateSlots(0, consent.birthDate, 370, 393, 415, 285.5, 8);
+    line(0, natEnding, 87, 285.5, { maxChars: 1 });                        // Nat[o/a]
+    line(0, consent.birthPlace, 110, 285.5, { maxChars: 48 });             // Nat..... a ...
+    dateSlots(0, consent.birthDate, 368, 385, 398, 285.5, 7);
     line(0, consent.fiscalCode, 140, 301.4, { maxChars: 40 });
     line(0, consent.residenceCity, 122, 317.3, { maxChars: 52 });
     line(0, consent.residenceAddress, 132, 333.2, { maxChars: 40 });
@@ -836,6 +842,7 @@ async function createAppointment(payload) {
           appointmentId: createdAppointment.id,
           clientId: client.id,
           subjectType: consent.subjectType,
+          gender: consent.gender,
           clientFullName: consent.clientFullName,
           clientEmail: consent.clientEmail,
           phone: consent.phone,
@@ -1102,6 +1109,7 @@ async function sendGeneratedConsentPdf(res, consentId) {
   const pdfBuffer = await generateConsentPdf({
     consent: {
       subjectType: record.subjectType,
+      gender: record.gender,
       clientFullName: record.clientFullName,
       clientEmail: record.clientEmail,
       phone: record.phone,

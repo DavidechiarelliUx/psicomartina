@@ -128,6 +128,7 @@ model InformedConsent {
   appointmentId    String      @unique @map("appointment_id") @db.Uuid
   clientId         String      @map("client_id") @db.Uuid
   subjectType      String      @default("adult") @map("subject_type")
+  gender           String?
   clientFullName   String      @map("client_full_name")
   clientEmail      String      @map("client_email")
   phone            String?
