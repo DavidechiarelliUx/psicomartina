@@ -20,7 +20,7 @@ import { sendAppointmentConfirmedToClient, sendBookingNotificationToStudio, send
 loadEnv();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const CONSENT_TEMPLATE_PATH = join(__dirname, "assets", "modulo-consenso-informato.pdf");
+const CONSENT_TEMPLATE_PATH = join(__dirname, "assets", "modulo-consenso-informato-v2.pdf");
 
 const { PrismaClient } = prismaPkg;
 const databaseUrl = process.env.DATABASE_URL;
@@ -597,103 +597,76 @@ async function generateConsentPdf({ consent, appointmentPayload }) {
     line(pageIndex, m, xMonth, yMaxTemplate, { size, maxChars: 2 });
     line(pageIndex, y, xYear, yMaxTemplate, { size, maxChars: 4 });
   };
-  const todayText = new Date().toLocaleDateString("it-IT");
-  const colloquioDate = toItalianDate(appointmentPayload?.date) || todayText;
-  const paymentText = consent.paymentMethod || "Metodo tracciabile concordato con lo studio";
   const consentGranted = consent.personalDataConsentChoice !== "denied";
-  const numberX = 488; // posizione della "n." civico sulle righe "in via/piazza"
+  const isOnline = String(consent.serviceLocation || "").trim().toLowerCase() === "online";
+  // X nelle caselle "FORNISCE / NON FORNISCE IL CONSENSO".
+  const consentCheck = (pageIndex, yMax) => check(pageIndex, consentGranted ? 74 : 207, yMax);
 
-  // ----- PAGINA 1: dati anagrafici nel riquadro appropriato -----
+  // ===== PAGINA 1: dati anagrafici nel riquadro appropriato (coordinate template V2) =====
   if (consent.subjectType === "minor") {
-    line(0, consent.minorFullName, 120, 410.9, { maxChars: 78 });          // Minorenne ...
-    line(0, consent.birthPlace, 105, 425.58, { maxChars: 72 });            // nat... a ...
-    dateSlots(0, consent.birthDate, 81, 105, 124, 440.23);    // il __/__/__
-    line(0, consent.fiscalCode, 140, 454.88, { maxChars: 60 });            // codice fiscale ...
-    line(0, consent.residenceCity, 140, 469.53, { maxChars: 60 });         // residente a ...
-    line(0, consent.residenceAddress, 128, 484.18, { maxChars: 60 });      // in via/piazza ...
-    line(0, consent.residenceNumber, numberX, 484.18, { maxChars: 8 });
+    line(0, consent.minorFullName, 122, 391.0, { maxChars: 68 });          // Minorenne ...
+    line(0, consent.birthPlace, 110, 407.5, { maxChars: 50 });             // nat... a ...
+    dateSlots(0, consent.birthDate, 375, 398, 420, 407.5, 8);              // il __/__/__
+    line(0, consent.fiscalCode, 140, 421.2, { maxChars: 40 });             // codice fiscale ...
+    line(0, consent.residenceCity, 122, 437.0, { maxChars: 52 });          // residente a ...
+    line(0, consent.residenceAddress, 132, 452.9, { maxChars: 40 });       // in via/piazza ...
+    line(0, consent.residenceNumber, 400, 452.9, { maxChars: 6 });         // n. civico
   } else if (consent.subjectType === "protected_person") {
-    line(0, consent.clientFullName, 95, 535.96, { maxChars: 80 });         // Sig ...
-    line(0, consent.birthPlace, 105, 550.61, { maxChars: 72 });            // nat... a ...
-    dateSlots(0, consent.birthDate, 81, 105, 124, 565.26);    // il __/__/__
-    line(0, consent.fiscalCode, 140, 579.91, { maxChars: 60 });            // codice fiscale ...
-    line(0, consent.residenceCity, 140, 594.56, { maxChars: 60 });         // residente a ...
-    line(0, consent.residenceAddress, 128, 609.20, { maxChars: 60 });      // in via/piazza ...
-    line(0, consent.residenceNumber, numberX, 609.20, { maxChars: 8 });
+    line(0, consent.clientFullName, 92, 531.0, { maxChars: 70 });          // Sig ...
+    line(0, consent.birthPlace, 108, 549.8, { maxChars: 50 });             // nat... a ...
+    dateSlots(0, consent.birthDate, 371, 394, 416, 549.8, 8);
+    line(0, consent.fiscalCode, 140, 565.7, { maxChars: 40 });
+    line(0, consent.residenceCity, 124, 581.6, { maxChars: 52 });
+    line(0, consent.residenceAddress, 132, 597.5, { maxChars: 40 });
+    line(0, consent.residenceNumber, 400, 597.5, { maxChars: 6 });
   } else {
-    line(0, consent.clientFullName, 118, 271.26, { maxChars: 78 });        // Sig/Sig.ra ...
-    line(0, consent.birthPlace, 105, 285.91, { maxChars: 72 });            // nat... a ...
-    dateSlots(0, consent.birthDate, 81, 105, 124, 300.56);    // il __/__/__
-    line(0, consent.fiscalCode, 140, 315.20, { maxChars: 60 });            // codice fiscale ...
-    line(0, consent.residenceCity, 140, 329.85, { maxChars: 60 });         // residente a ...
-    line(0, consent.residenceAddress, 128, 344.50, { maxChars: 60 });      // in via/piazza ...
-    line(0, consent.residenceNumber, numberX, 344.50, { maxChars: 8 });
+    line(0, consent.clientFullName, 113, 266.8, { maxChars: 70 });         // Sig/Sig.ra ...
+    line(0, consent.birthPlace, 110, 285.5, { maxChars: 50 });             // Nat..... a ...
+    dateSlots(0, consent.birthDate, 370, 393, 415, 285.5, 8);
+    line(0, consent.fiscalCode, 140, 301.4, { maxChars: 40 });
+    line(0, consent.residenceCity, 122, 317.3, { maxChars: 52 });
+    line(0, consent.residenceAddress, 132, 333.2, { maxChars: 40 });
+    line(0, consent.residenceNumber, 455, 333.2, { maxChars: 6 });
   }
 
-  // Prestazione scelta: marca con X il punto elenco corrispondente.
-  const serviceMarkY = consent.serviceKind === "sostegno_psicologico" ? 723 : consent.serviceKind === "altro" ? 742 : 704;
-  check(0, 92, serviceMarkY);
+  // Prestazione scelta: X accanto al punto elenco corrispondente.
+  const serviceMarkY = consent.serviceKind === "sostegno_psicologico" ? 723.8 : consent.serviceKind === "altro" ? 743.4 : 704.3;
+  check(0, 89, serviceMarkY);
 
-  // ----- PAGINA 2: sede della prestazione -----
-  // Copre la sede precompilata nel template e scrive la sede scelta
-  // (studio, online o altra sede).
-  cover(1, 137, 100, 388, 14);
-  line(1, consent.serviceLocation || getConfiguredServiceLocations()[0], 145, 110.52, { maxChars: 68 });
-
-  // ----- PAGINA 2: modalità di pagamento (riga "Il pagamento avverrà ...") -----
-  line(1, paymentText, 218, 398.06, { maxChars: 78 });
-  // Compenso: il template riporta già "45 €"; sovrascrivi solo se diverso dal default.
-  if (consent.compensationAmount && String(consent.compensationAmount).trim() !== "45") {
-    cover(1, 128, 333, 16, 13);
-    line(1, String(consent.compensationAmount), 130, 342.38, { maxChars: 6, bold: true });
+  // ===== PAGINA 2: sede ("presso ___" oppure "in modalità telematica") =====
+  if (isOnline) {
+    check(1, 89, 122.9);
+  } else {
+    check(1, 89, 109.3);
+    line(1, consent.serviceLocation, 142, 109.3, { maxChars: 60 });
   }
+  // Durata, frequenza, compenso e modalità di pagamento: lasciati in bianco
+  // (compilati a mano dall'amministrazione sul PDF stampato).
 
-  // ----- PAGINA 5: data del colloquio ("avvenuto in data __/__/__") -----
-  dateSlots(4, colloquioDate, 410, 436, 462, 724.31, 8);
+  // PAGINA 5: la data del colloquio ("avvenuto in data __/__/__") resta in bianco
+  // (compilata a mano in fase di firma, insieme a luogo/data/firma).
 
-  // ----- Pagine firma: scegli il riquadro in base al tipo di soggetto -----
+  // ===== Pagine firma: riquadro in base al soggetto (solo nomi + casella consenso;
+  // gli altri dati anagrafici di genitori/tutore si completano a mano in fase di firma) =====
   const finalBox = consent.signatureBox || consent.subjectType;
   if (finalBox === "minor") {
     // MADRE (pagina 6)
-    line(5, consent.tutorFullName, 112, 409.31, { maxChars: 60 });         // La Sig.ra ...
-    line(5, consent.minorFullName, 185, 423.96, { maxChars: 54 });         // madre del minorenne ...
-    line(5, consent.birthPlace, 125, 438.61, { maxChars: 56 });            // nata a ...
-    dateSlots(5, consent.birthDate, 81, 105, 124, 453.26);    // il __/__/__
-    line(5, consent.residenceCity, 125, 467.91, { maxChars: 60 });         // residente a ...
-    line(5, consent.residenceAddress, 128, 482.55, { maxChars: 60 });      // in via/piazza ...
-    line(5, consent.residenceNumber, numberX, 482.55, { maxChars: 8 });
-    check(5, consentGranted ? 73.5 : 207, 561.32);                         // FORNISCE / NON FORNISCE (madre)
-    line(5, todayText, 130, 624.34);                                       // Luogo e data
-    line(5, consent.tutorFullName, 425, 624.34, { maxChars: 30 });         // Firma della madre
+    line(5, consent.tutorFullName, 115, 408.5, { maxChars: 60 });          // La Sig.ra ...
+    line(5, consent.minorFullName, 255, 424.5, { maxChars: 38 });          // madre del minorenne ...
+    consentCheck(5, 557.3);
     // PADRE (pagina 6 -> pagina 7)
-    line(5, consent.secondTutorFullName, 100, 712.23, { maxChars: 60 });   // Il Sig. ...
-    line(5, consent.minorFullName, 180, 726.88, { maxChars: 54 });         // padre del minorenne ...
-    line(5, consent.birthPlace, 125, 741.53, { maxChars: 56 });            // nato a ...
-    dateSlots(5, consent.birthDate, 81, 105, 124, 756.18);    // il __/__/__
-    line(6, consent.residenceCity, 125, 84.21, { maxChars: 60 });          // residente a ...
-    line(6, consent.residenceAddress, 128, 98.86, { maxChars: 60 });       // in via/piazza ...
-    line(6, consent.residenceNumber, numberX, 98.86, { maxChars: 8 });
-    check(6, consentGranted ? 73.5 : 207, 177.62);
-    line(6, todayText, 130, 240.64);
-    line(6, consent.secondTutorFullName, 418, 240.64, { maxChars: 28 });
+    line(5, consent.secondTutorFullName, 110, 718.2, { maxChars: 60 });    // Il Sig. ...
+    line(5, consent.minorFullName, 190, 734.3, { maxChars: 40 });          // padre del minorenne ...
+    consentCheck(6, 183.8);
   } else if (finalBox === "protected_person") {
     // PERSONE SOTTO TUTELA (pagina 7)
-    line(6, consent.tutorFullName || consent.signedName, 150, 352.93, { maxChars: 54 }); // La Sig.ra/Il Sig. (tutore)
-    line(6, consent.birthPlace, 120, 367.58, { maxChars: 52 });            // nata/o a ...
-    dateSlots(6, consent.birthDate, 449, 473, 492, 367.58, 8); // il __/__/__
-    line(6, consent.clientFullName, 192, 382.23, { maxChars: 46 });        // Tutore del Sig. ... (assistito)
-    line(6, consent.residenceCity, 125, 426.17, { maxChars: 60 });         // residente a ...
-    line(6, consent.residenceAddress, 128, 440.82, { maxChars: 60 });      // in via/piazza ...
-    line(6, consent.residenceNumber, numberX, 440.82, { maxChars: 8 });
-    check(6, consentGranted ? 73.5 : 207, 519.59);
-    line(6, todayText, 130, 582.61);
-    line(6, consent.tutorFullName || consent.signedName, 405, 582.61, { maxChars: 34 });
+    line(6, consent.tutorFullName || consent.signedName, 140, 372.2, { maxChars: 58 }); // La Sig.ra/Il Sig. (tutore)
+    line(6, consent.clientFullName, 175, 403.3, { maxChars: 48 });         // Tutore del Sig. ... (assistito)
+    consentCheck(6, 551.4);
   } else {
     // ADULTI (pagina 6)
-    line(5, consent.signedName || consent.clientFullName, 140, 153.33, { maxChars: 50 }); // La Sig.ra/Il Sig. ...
-    check(5, consentGranted ? 73.5 : 207, 217.44);
-    line(5, todayText, 130, 280.46);
-    line(5, consent.signedName || consent.clientFullName, 405, 280.46, { maxChars: 34 });
+    line(5, consent.signedName || consent.clientFullName, 140, 154.7, { maxChars: 55 }); // La Sig.ra/Il Sig. ...
+    consentCheck(5, 225.1);
   }
 
   const bytes = await pdfDoc.save();

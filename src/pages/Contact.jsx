@@ -25,7 +25,9 @@ import CodiceFiscale from "codice-fiscale-js";
 // Calcolo automatico del codice fiscale (modificabile a mano). Label campo "Nome e cognome"
 // => primo token = nome, resto = cognome.
 function computeFiscalCode({ fullName, gender, birthDate, birthPlace }) {
-  if (!fullName || !gender || !birthDate || !birthPlace) return "";
+  // Il calcolo richiede il sesso (M/F). Se non specificato, il CF si inserisce a mano.
+  if (gender !== "M" && gender !== "F") return "";
+  if (!fullName || !birthDate || !birthPlace) return "";
   const parts = String(fullName).trim().split(/\s+/);
   if (parts.length < 2) return "";
   const name = parts[0];
@@ -687,24 +689,9 @@ export default function Contact() {
                           <SelectContent>
                             <SelectItem value="M">Maschile</SelectItem>
                             <SelectItem value="F">Femminile</SelectItem>
+                            <SelectItem value="ns">Preferisco non specificare</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="fiscal-code">Codice fiscale *</Label>
-                        <Input
-                          id="fiscal-code"
-                          value={form.consent.fiscal_code}
-                          onChange={(e) => {
-                            setCfManual(true);
-                            updateConsent("fiscal_code", e.target.value.toUpperCase());
-                          }}
-                          placeholder="Calcolato in automatico"
-                          className="bg-background uppercase"
-                        />
-                        <p className="text-[11px] text-muted-foreground">
-                          Generato in automatico da nome, sesso, data e luogo di nascita. Puoi correggerlo se necessario.
-                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="birth-place">Luogo di nascita *</Label>
@@ -755,6 +742,22 @@ export default function Contact() {
                           placeholder="N."
                           className="bg-background"
                         />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="fiscal-code">Codice fiscale *</Label>
+                        <Input
+                          id="fiscal-code"
+                          value={form.consent.fiscal_code}
+                          onChange={(e) => {
+                            setCfManual(true);
+                            updateConsent("fiscal_code", e.target.value.toUpperCase());
+                          }}
+                          placeholder="Calcolato in automatico dai dati sopra"
+                          className="bg-background uppercase"
+                        />
+                        <p className="text-[11px] text-muted-foreground">
+                          Generato in automatico da nome, sesso, data e luogo di nascita. Puoi correggerlo se necessario.
+                        </p>
                       </div>
                       <div className="space-y-2 sm:col-span-2">
                         <Label>Consenso trattamento dati personali *</Label>
