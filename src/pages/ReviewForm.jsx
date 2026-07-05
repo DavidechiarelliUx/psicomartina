@@ -39,7 +39,7 @@ export default function ReviewForm() {
 
   return (
     <div className="pt-24 md:pt-28">
-      <SEOHead title="Lascia una recensione" description="Lascia una recensione sul tuo appuntamento con lo Studio Psicomartina" noIndex />
+      <SEOHead title="Lascia una recensione" description="Lascia una recensione sul tuo appuntamento con la Dott.ssa Martina Giovinazzo" noIndex />
       <section className="px-5 md:px-8 py-16 md:py-24">
         <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8">
           {isLoading ? (

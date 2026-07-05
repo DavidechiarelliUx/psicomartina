@@ -39,13 +39,13 @@ export default function DashboardLogin() {
 
   return (
     <main className="min-h-screen bg-secondary/40 px-5 py-10 flex items-center justify-center">
-      <SEOHead title="Accesso Dashboard" description="Accesso riservato dashboard Studio Psicomartina" noIndex />
+      <SEOHead title="Accesso Dashboard" description="Accesso riservato dashboard Dott.ssa Martina Giovinazzo" noIndex />
       <form onSubmit={handleLogin} className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-lg p-7">
         <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-5">
           <LockKeyhole className="w-5 h-5" />
         </div>
         <h1 className="font-heading text-2xl font-semibold text-center text-foreground mb-2">Accesso riservato</h1>
-        <p className="text-sm text-muted-foreground text-center mb-6">Dashboard Studio Psicomartina</p>
+        <p className="text-sm text-muted-foreground text-center mb-6">Dashboard Dott.ssa Martina Giovinazzo</p>
 
         <label className="block text-sm font-medium text-foreground mb-2" htmlFor="dashboard-username">
           Username

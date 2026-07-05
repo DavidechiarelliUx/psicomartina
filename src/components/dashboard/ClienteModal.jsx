@@ -65,17 +65,17 @@ export default function ClienteModal({ cliente, onClose }) {
     if (!normalized) return undefined;
 
     if (normalized.stato === "confirmed") {
-      setSubject(normalized.confirmationEmailSent ? "Comunicazione appuntamento confermato - Studio Psicomartina" : "Conferma appuntamento - Studio Psicomartina");
+      setSubject(normalized.confirmationEmailSent ? "Comunicazione appuntamento confermato - Dott.ssa Martina Giovinazzo" : "Conferma appuntamento - Dott.ssa Martina Giovinazzo");
       setBody(
         normalized.confirmationEmailSent
           ? `Gentile ${normalized.nome},\n\nla conferma del suo appuntamento risulta già inviata. Le scriviamo per comunicarle ulteriori informazioni relative all'appuntamento del ${normalized.data} alle ${normalized.ora}.\n\nIn caso di necessità non esiti a contattarci.`
           : `Gentile ${normalized.nome},\n\nle confermiamo il suo appuntamento del ${normalized.data} alle ${normalized.ora} per ${normalized.servizio}.\n\nIn caso di necessità non esiti a contattarci.`
       );
     } else if (normalized.stato === "completed") {
-      setSubject("Grazie per l'incontro - Studio Psicomartina");
+      setSubject("Grazie per l'incontro - Dott.ssa Martina Giovinazzo");
       setBody(`Gentile ${normalized.nome},\n\nla ringraziamo per essere venuto/a all'appuntamento.\n\nSe ha bisogno di ulteriori informazioni non esiti a contattarci.`);
     } else {
-      setSubject("Comunicazione dallo Studio Psicomartina");
+      setSubject("Comunicazione dalla Dott.ssa Martina Giovinazzo");
       setBody(
         `Gentile ${normalized.nome},\n\nLe scriviamo in merito alla sua richiesta${normalized.data ? ` del ${normalized.data}` : ""}${
           normalized.ora ? ` alle ${normalized.ora}` : ""

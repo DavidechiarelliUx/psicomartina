@@ -1,5 +1,5 @@
 export const SITE_URL = (import.meta.env.VITE_SITE_URL || "https://psicologa-martina-giovinazzo.com").replace(/\/$/, "");
-export const SITE_NAME = "Studio Psicomartina";
+export const SITE_NAME = "Dott.ssa Martina Giovinazzo";
 
 export const seoPages = {
   home: {
