@@ -3,7 +3,7 @@ export const SITE_NAME = "Dott.ssa Martina Giovinazzo";
 
 export const seoPages = {
   home: {
-    title: "Dott.ssa Martina Giovinazzo - Psicologa a Roma",
+    title: "Dott.ssa Martina Giovinazzo - Psicologa",
     path: "/",
     description:
       "Sono la Dott.ssa Martina Giovinazzo, psicologa, e mi occupo di sostegno psicologico rivolto a bambini, adolescenti e adulti. Ricevo a Roma e online.",

@@ -2,10 +2,11 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="/images/favicon_bianca.ico" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="manifest" href="/manifest.json" />
-    <title>Dott.ssa Martina Giovinazzo - Psicologa a Roma</title>
+    <title>Dott.ssa Martina Giovinazzo - Psicologa</title>
     <meta
       name="description"
       content="Sono la Dott.ssa Martina Giovinazzo, psicologa, e mi occupo di sostegno psicologico rivolto a bambini, adolescenti e adulti. Ricevo a Roma e online."
@@ -16,29 +17,42 @@
       name="keywords"
       content="psicologa Roma, supporto psicologico ansia, psicologia relazioni, autostima, elaborazione traumi, psicologa online"
     />
-    <meta property="og:title" content="Dott.ssa Martina Giovinazzo - Psicologa a Roma" />
+    <meta property="og:site_name" content="Dott.ssa Martina Giovinazzo" />
+    <meta property="og:title" content="Dott.ssa Martina Giovinazzo - Psicologa" />
     <meta property="og:description" content="Sono la Dott.ssa Martina Giovinazzo, psicologa, e mi occupo di sostegno psicologico rivolto a bambini, adolescenti e adulti. Ricevo a Roma e online." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Dott.ssa Martina Giovinazzo - Psicologa a Roma" />
+    <meta name="twitter:title" content="Dott.ssa Martina Giovinazzo - Psicologa" />
     <meta name="twitter:description" content="Sono la Dott.ssa Martina Giovinazzo, psicologa, e mi occupo di sostegno psicologico rivolto a bambini, adolescenti e adulti. Ricevo a Roma e online." />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "ProfessionalService",
-        "name": "Dott.ssa Martina Giovinazzo - Psicologa",
-        "description": "Sono la Dott.ssa Martina Giovinazzo, psicologa, e mi occupo di sostegno psicologico rivolto a bambini, adolescenti e adulti. Ricevo a Roma e online.",
-        "url": "https://psicologa-martina-giovinazzo.com/",
-        "telephone": "+393339476850",
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "Via Cairo Montenotte 55",
-          "addressLocality": "Roma",
-          "addressRegion": "RM",
-          "addressCountry": "IT"
-        },
-        "areaServed": "Roma",
-        "priceRange": "€€"
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://psicologa-martina-giovinazzo.com/#website",
+            "url": "https://psicologa-martina-giovinazzo.com/",
+            "name": "Dott.ssa Martina Giovinazzo",
+            "alternateName": "Dott.ssa Martina Giovinazzo - Psicologa"
+          },
+          {
+            "@type": "ProfessionalService",
+            "@id": "https://psicologa-martina-giovinazzo.com/#professionista",
+            "name": "Dott.ssa Martina Giovinazzo - Psicologa",
+            "description": "Sono la Dott.ssa Martina Giovinazzo, psicologa, e mi occupo di sostegno psicologico rivolto a bambini, adolescenti e adulti. Ricevo a Roma e online.",
+            "url": "https://psicologa-martina-giovinazzo.com/",
+            "telephone": "+393339476850",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Via Cairo Montenotte 55",
+              "addressLocality": "Roma",
+              "addressRegion": "RM",
+              "addressCountry": "IT"
+            },
+            "areaServed": "Roma",
+            "priceRange": "€€"
+          }
+        ]
       }
     </script>
   </head>
