@@ -148,8 +148,8 @@ function getAllowedOrigins() {
     .filter(Boolean);
   if (fromEnv.length) return fromEnv;
   return [
-    "https://psicomartina.it",
-    "https://www.psicomartina.it",
+    "https://psicologa-martina-giovinazzo.com",
+    "https://www.psicologa-martina-giovinazzo.com",
     "https://psicomartina.vercel.app",
   ];
 }

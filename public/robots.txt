@@ -4,4 +4,4 @@ Disallow: /dashboard
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://psicomartina.it/sitemap.xml
+Sitemap: https://psicologa-martina-giovinazzo.com/sitemap.xml
