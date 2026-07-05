@@ -21,9 +21,19 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://psicologa-martina-giovinazzo.com/contatti</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://psicologa-martina-giovinazzo.com/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://psicologa-martina-giovinazzo.com/blog/ansia-respiro</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://psicologa-martina-giovinazzo.com/blog/ansia-respiro-consapevole</loc>
@@ -31,7 +41,32 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://psicologa-martina-giovinazzo.com/blog/confini-relazioni</loc>
+    <loc>https://psicologa-martina-giovinazzo.com/blog/ansia-corpo-segnali</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://psicologa-martina-giovinazzo.com/blog/lutto-spazio-cambia</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://psicologa-martina-giovinazzo.com/blog/insonnia-mente-corre</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://psicologa-martina-giovinazzo.com/blog/comunicazione-assertiva</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://psicologa-martina-giovinazzo.com/blog/stress-lavorativo</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://psicologa-martina-giovinazzo.com/blog/trauma-sicurezza</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -39,11 +74,6 @@
     <loc>https://psicologa-martina-giovinazzo.com/blog/autostima-gentilezza</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://psicologa-martina-giovinazzo.com/contatti</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://psicologa-martina-giovinazzo.com/privacy</loc>
