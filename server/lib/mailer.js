@@ -92,6 +92,7 @@ export async function sendBookingNotificationToStudio({ cliente, data, ora, serv
   await transporter.sendMail({
     from: sender(),
     to: process.env.EMAIL_STUDIO,
+    replyTo: cliente.email ? `"${fullName}" <${cliente.email}>` : undefined,
     subject: `Nuova richiesta appuntamento - ${fullName}`,
     attachments: consensoPdf
       ? [
