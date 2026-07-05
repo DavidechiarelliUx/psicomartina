@@ -32,7 +32,11 @@ export default function SEOHead({ title, description, canonical, noIndex = false
   const location = useLocation();
 
   useEffect(() => {
-    const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+    const fullTitle = title
+      ? title.includes("Dott.ssa Martina Giovinazzo")
+        ? title
+        : `${title} | ${SITE_NAME}`
+      : SITE_NAME;
     const canonicalUrl = canonical || getCanonicalUrl(location.pathname);
     const robots = noIndex ? "noindex, nofollow" : "index, follow";
 

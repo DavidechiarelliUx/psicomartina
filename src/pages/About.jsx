@@ -14,7 +14,7 @@ const alboRegion = import.meta.env.VITE_STUDIO_ALBO_REGION || "Lazio";
 
 const qualifications = [
   `Psicologa — iscritta all'Albo degli Psicologi del ${alboRegion} n. ${alboNumber}`,
-  "Scuola di specializzazione in psicoterapia cognitivo-comportamentale APC-SPC di Roma (in corso)",
+  "Formazione specialistica cognitivo-comportamentale APC-SPC di Roma (in corso)",
   "Laurea Magistrale in Psicologia Clinica e della Riabilitazione — Università degli Studi Niccolò Cusano",
   "Laurea Triennale in Scienze e Tecniche Psicologiche — Università degli Studi Niccolò Cusano",
 ];
@@ -54,8 +54,8 @@ export default function About() {
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
                   Mi chiamo Martina e sono una psicologa. Ho svolto la mia formazione a Roma, dove ho conseguito la laurea in
-                  Psicologia, e continuo a vivere e lavorare in questa città. Attualmente sono iscritta alla scuola di
-                  specializzazione in psicoterapia cognitivo-comportamentale APC SPC.
+                  Psicologia, e continuo a vivere e lavorare in questa città. Attualmente frequento un percorso di
+                  formazione specialistica cognitivo-comportamentale APC-SPC.
                 </p>
                 <p>
                   Nel mio lavoro mi occupo di supporto psicologico rivolto a bambini, adolescenti e adulti, sia in presenza a
