@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|images/|favicon.svg|manifest.json|robots.txt|sitemap.xml).*)",
+      "source": "/((?!api/|assets/|images/|favicon.svg|favicon.png|favicon-256.png|apple-touch-icon.png|manifest.json|robots.txt|sitemap.xml).*)",
       "destination": "/index.html"
     }
   ],
