@@ -39,7 +39,6 @@ export default function BlogPostPage() {
   if (isLoading && !post) {
     return (
       <div className="pt-24 md:pt-28 px-5 md:px-8 max-w-3xl mx-auto pb-20 text-center text-muted-foreground">
-        <SEOHead title="Caricamento articolo" description={seoPages.blog.description} canonical={getCanonicalUrl(`/blog/${slug}`)} noIndex />
         Caricamento articolo...
       </div>
     );
